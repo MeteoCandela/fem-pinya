@@ -2,7 +2,7 @@
 
 Joc de castells per al mòbil i l’ordinador. Porta la teva colla de la gamma bàsica de 6 fins als castells de 10: assaja, tria bé cada diada, juga les cartes i lluita al Concurs contra 40 colles.
 
-**Juga-hi:** https://meteocandela.github.io/fem-pinya/
+**Juga-hi:** https://fempinya.meteocandela.cat/
 
 Al mòbil, des del navegador, «Afegeix a la pantalla d’inici» per instal·lar-lo com una app. Un cop carregat, funciona sense connexió.
 
