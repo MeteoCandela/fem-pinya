@@ -1346,6 +1346,7 @@ home(){
    <button class="btn ghost" data-act="style">Estil gràfic: ${STYLE==='real'?'realista':'dibuix'} (toca per canviar)</button>
    ${nomSeg()}
    <button class="btn ghost" data-act="music">${musicOn()?'Música activada':'Música desactivada'} (toca per canviar)</button>
+   ${installBox()}
    <button class="btn ${S?'alt':'main'}" data-act="create">${S?'Funda una colla nova':'Funda la teva colla'}</button>
    <ul class="how" style="margin-top:16px">
      <li><span>El castell puja sol. <b>Arrossega el dit</b> cap on s’inclini per posar-hi la pinya a sota i mantenir l’agulla a la zona verda.</span></li>
@@ -1819,7 +1820,21 @@ function openPack(got){
   got.forEach((g,i)=>setTimeout(()=>{try{sfx.ding();}catch(e){}},1350+i*500));
   setTimeout(()=>{try{tone(300,0,.25,'triangle',.08);noise(.3,.12,2500);}catch(e){}},700);
 }
+/* ---------- Instal·lar l'app al mòbil ---------- */
+let instPrompt=null;
+const standalone=()=>matchMedia('(display-mode: standalone)').matches||matchMedia('(display-mode: fullscreen)').matches||navigator.standalone===true;
+const canPWA=()=>!!document.querySelector('link[rel=manifest]')&&location.protocol==='https:';
+const isIOS=()=>/iphone|ipad|ipod/i.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();instPrompt=e;if(view==='home')rerender('home');});
+window.addEventListener('appinstalled',()=>{instPrompt=null;toast('App instal·lada! Ja la tens a la pantalla d’inici.');if(view==='home')rerender('home');});
+function installBox(){
+  if(!canPWA()||standalone())return '';
+  if(instPrompt)return `<button class="btn alt" data-act="install">Instal·la l’app al mòbil</button>`;
+  if(isIOS())return `<p class="note">Per instal·lar-la a l’iPhone: toca <b>Comparteix</b> (el quadrat amb la fletxa) i després <b>Afegeix a la pantalla d’inici</b>.</p>`;
+  return `<p class="note">Per instal·lar-la: obre el menú del navegador (⋮) i tria <b>Instal·la l’aplicació</b> o <b>Afegeix a la pantalla d’inici</b>.</p>`;
+}
 const ACT={
+  install(){if(!instPrompt)return;const p=instPrompt;instPrompt=null;p.prompt();p.userChoice.finally(()=>rerender('home'));},
   packOk(){const p=document.getElementById('pack');if(p)p.remove();rerender('hub');},
   home(){go('home');},
   gam(d){tmp.gam=tmp.gam||{};tmp.gam[d.k]=d.g;if(view==='hub'){$('#tabc').innerHTML=TABS[tab]();}else rerender(view);},
