@@ -1,0 +1,1888 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Fem pinya! Temporada castellera</title>
+<meta name="description" content="Joc de castells: porta la teva colla de la gamma bàsica de 6 als castells de 10.">
+<meta name="theme-color" content="#000000">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<style>
+  @font-face{font-family:"Barlow";font-weight:400;font-style:normal;font-display:swap;src:url(fonts/barlow-latin-400-normal.woff2) format("woff2")}
+  @font-face{font-family:"Barlow";font-weight:500;font-style:normal;font-display:swap;src:url(fonts/barlow-latin-500-normal.woff2) format("woff2")}
+  @font-face{font-family:"Barlow";font-weight:600;font-style:normal;font-display:swap;src:url(fonts/barlow-latin-600-normal.woff2) format("woff2")}
+  @font-face{font-family:"Barlow";font-weight:700;font-style:normal;font-display:swap;src:url(fonts/barlow-latin-700-normal.woff2) format("woff2")}
+  @font-face{font-family:"Barlow Condensed";font-weight:600;font-style:normal;font-display:swap;src:url(fonts/barlow-condensed-latin-600-normal.woff2) format("woff2")}
+  @font-face{font-family:"Barlow Condensed";font-weight:700;font-style:normal;font-display:swap;src:url(fonts/barlow-condensed-latin-700-normal.woff2) format("woff2")}
+  @font-face{font-family:"Barlow Condensed";font-weight:800;font-style:normal;font-display:swap;src:url(fonts/barlow-condensed-latin-800-normal.woff2) format("woff2")}
+
+  /* Camisa, faixa i mocador: full blanc com els pantalons, bandes negres com la faixa,
+     el vermell del mocador només com a detall, i el color de la camisa de la colla com a accent. */
+  :root{
+    --paper:#1c2130; --ink:#f3f1ec; --faixa:#000; --mid:#a9afbd; --rule:rgba(255,255,255,.13); --soft:rgba(255,255,255,.06);
+    --moc:#d3241c; --colla:#c8312b; --ok:#6fd39a; --warn:#f0c463; --bad:#ff8a7a;
+    --gold:#f3c969; --dim:#a9afbd; --line:rgba(255,255,255,.13); --text:#f3f1ec;
+    --fd:"Barlow Condensed","Arial Narrow",ui-sans-serif,sans-serif;
+    --fb:"Barlow",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;height:100%;overflow:hidden;background:#2a3346;font-family:var(--fb);color:var(--ink)}
+  #app{position:fixed;inset:0;touch-action:none;user-select:none;-webkit-user-select:none}
+  canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+  .hidden{display:none!important}
+  button{font-family:var(--fb);color:inherit}
+  button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--colla);outline-offset:2px}
+
+  /* ---------- Joc: marcador com una faixa ---------- */
+  #play{position:absolute;inset:0;pointer-events:none}
+  .top{position:absolute;left:0;right:0;top:0;display:flex;align-items:center;gap:12px;background:var(--faixa);color:#fff;
+    padding:10px 14px 10px 12px;border-bottom:4px solid var(--colla)}
+  .ttl{flex:1;min-width:0}
+  .ttl b{display:block;font-family:var(--fd);font-size:22px;font-weight:800;line-height:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .ttl span{display:block;font-size:13.5px;color:#d9d9d9;font-weight:500;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .pts{flex:none;text-align:right;font-family:var(--fd);font-weight:800;font-size:26px;line-height:.9;font-variant-numeric:tabular-nums}
+  .pts small{display:block;font-family:var(--fb);font-size:11px;color:#bdbdbd;font-weight:600;margin-top:2px}
+  #hint{position:absolute;left:16px;right:16px;top:132px;text-align:center;font-weight:700;font-size:15px;color:#fff;
+    text-shadow:0 1px 4px rgba(0,0,0,.7);transition:opacity .5s}
+  #dismount{pointer-events:auto;position:absolute;left:50%;bottom:22px;transform:translateX(-50%);border:2px solid var(--faixa);
+    background:#fff;color:#151515;border-radius:8px;padding:10px 22px;font-weight:700;font-size:15px;cursor:pointer;box-shadow:0 3px 0 var(--faixa)}
+
+  /* ---------- Pantalles: un full blanc amb la faixa a dalt ---------- */
+  #ui{position:absolute;inset:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:34vh 8px 24px;touch-action:pan-y}
+  #ui.full{padding-top:14px}
+  #ui.low{display:flex;flex-direction:column;justify-content:flex-end;padding-top:20px}
+  .sheet{max-width:500px;width:100%;margin:0 auto;background:var(--paper);border-radius:10px;padding:22px 18px 18px;position:relative;
+    border-top:10px solid var(--faixa);box-shadow:0 18px 50px rgba(0,0,0,.35)}
+  .brand{font-family:var(--fd);font-weight:800;font-size:64px;line-height:.85;letter-spacing:-.01em;margin:4px 0 0;color:var(--ink)}
+  .brand i{font-style:normal;color:var(--moc)}
+  .moc{height:16px;margin:-22px -18px 18px;background-color:var(--moc);
+    background-image:radial-gradient(circle,#fff 1.6px,transparent 2px),radial-gradient(circle,#fff 1.6px,transparent 2px);
+    background-size:12px 12px;background-position:0 0,6px 6px}
+  .cname{font-family:var(--fd);font-weight:800;font-size:40px;line-height:.92;margin:0}
+  .sub{color:var(--mid);font-size:14px;margin-top:4px}
+  .lead{margin:12px 0 0;color:#d6d8de;font-size:15.5px;line-height:1.5}
+  h2{font-family:var(--fd);font-weight:800;font-size:30px;line-height:.95;margin:0 0 6px}
+  h3{font-family:var(--fd);font-weight:700;font-size:20px;margin:20px 0 8px}
+  p{margin:6px 0}
+  .btn{display:block;width:100%;font-weight:700;font-size:16px;border-radius:8px;padding:13px;cursor:pointer;border:2px solid var(--ink);margin-top:10px;text-align:center;background:transparent;color:var(--ink)}
+  .btn.main{background:var(--colla);color:var(--colla-ink,#fff);border-color:var(--colla)}
+  .btn.main:active{transform:translateY(1px)}
+  .btn.alt{background:transparent;color:var(--ink)}
+  .btn.ghost{border:0;background:none;color:var(--ink);font-weight:600;font-size:14px;padding:8px;text-decoration:underline;text-underline-offset:3px;text-decoration-color:rgba(255,255,255,.35)}
+  .btn[disabled]{opacity:.35;cursor:default}
+  .row2{display:flex;gap:8px}.row2 .btn{flex:1}
+  /* xifres grans separades per filets, com un marcador */
+  .stats{display:grid;grid-template-columns:repeat(3,1fr);margin-top:16px;border-top:2px solid var(--ink);border-bottom:1px solid var(--rule)}
+  .stat{padding:9px 8px 8px;border-left:1px solid var(--rule)}
+  .stat:first-child{border-left:0;padding-left:0}
+  .stat b{display:block;font-family:var(--fd);font-size:30px;font-weight:800;line-height:.9;font-variant-numeric:tabular-nums}
+  .stat span{display:block;font-size:12px;color:var(--mid);margin-top:3px}
+  .stats.s4{grid-template-columns:repeat(4,1fr)}
+  .stats.s4 .stat b{font-size:27px}
+  .next{margin-top:14px;background:var(--soft);border-left:6px solid var(--colla);border-radius:0 8px 8px 0;padding:12px 14px}
+  .next small{color:var(--mid);font-weight:600;font-size:13px}
+  .next b{display:block;font-family:var(--fd);font-size:28px;font-weight:800;line-height:.95;margin-top:2px}
+  .tabs{display:flex;gap:0;margin:20px 0 10px;border-bottom:1px solid var(--rule);overflow-x:auto}
+  .tabs button{flex:1;border:0;background:none;padding:9px 4px 8px;font-weight:600;font-size:14px;cursor:pointer;color:var(--mid);border-bottom:3px solid transparent;margin-bottom:-1px;white-space:nowrap}
+  .tabs button.on{color:var(--ink);font-weight:700;border-bottom-color:var(--colla)}
+  .list{display:grid;gap:0;border-top:1px solid var(--rule)}
+  .it{display:flex;align-items:center;gap:10px;background:none;border:0;border-bottom:1px solid var(--rule);border-radius:0;padding:10px 2px;text-align:left;width:100%;cursor:pointer;font-size:14px}
+  .it:active{background:var(--soft)}
+  .it.lock{opacity:.42;cursor:default}
+  .it .mid{flex:1;min-width:0}
+  .it .nm,.it .meta{display:block}
+  .it .nm{font-weight:700;font-size:15.5px;line-height:1.15}
+  /* el codi del castell, com als marcadors i a la taula del Concurs */
+  .it .nm small{display:inline-block;font-family:var(--fd);font-weight:700;font-size:13px;color:#111;background:var(--ink);border-radius:3px;padding:1px 5px 0;margin-left:6px;vertical-align:1px;letter-spacing:.02em}
+  .it .meta{font-size:12.5px;color:var(--mid);margin-top:3px}
+  .it .rt{text-align:right;flex:none;font-family:var(--fd);font-weight:800;font-size:20px;font-variant-numeric:tabular-nums}
+  .it .rt small{display:block;font-family:var(--fb);font-weight:600;font-size:11.5px;color:var(--mid)}
+  .it svg{flex:none;width:30px;height:48px}
+  .bar{height:4px;background:var(--rule);margin-top:6px;overflow:hidden;position:relative}
+  .bar i{position:absolute;left:0;top:0;bottom:0;background:var(--colla)}
+  .bar i.add{background:var(--ink);opacity:.5}
+  .tag{display:inline-block;font-size:11px;font-weight:700;padding:1px 6px;border-radius:3px;margin-left:5px;vertical-align:1px;border:1.5px solid currentColor}
+  .tag.d{color:var(--ok)}.tag.c{color:var(--warn)}
+  .risk{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px;vertical-align:0}
+  .grp{font-family:var(--fd);font-weight:700;font-size:17px;color:var(--ink);margin:16px 0 4px}
+  .cnt{display:flex;align-items:center;gap:6px;flex:none}
+  .cnt button{width:34px;height:34px;border-radius:6px;border:2px solid var(--ink);background:transparent;font-size:19px;font-weight:700;cursor:pointer;line-height:1}
+  .cnt button[disabled]{opacity:.3}
+  .cnt b{min-width:16px;text-align:center;font-family:var(--fd);font-size:20px}
+  .slots{display:flex;gap:6px;margin:10px 0}
+  .slots i{width:20px;height:20px;border-radius:3px;border:2px solid var(--ink)}
+  .slots i.on{background:var(--colla);border-color:var(--colla)}
+  .note{background:var(--soft);border-radius:6px;padding:10px 12px;font-size:14px;color:var(--ink);margin:10px 0}
+  /* cartes: com cromos, amb la franja del color de la colla */
+  .cards{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .card{position:relative;text-align:left;border:1.5px solid var(--rule);background:linear-gradient(160deg,#283149,#1f2638);border-radius:14px;padding:11px 10px 10px;cursor:pointer;font-size:13px;color:var(--ink)}
+  .card .ic{font-size:26px;line-height:1}
+  .card b{display:block;font-family:var(--fd);font-size:19px;font-weight:800;line-height:1;margin-top:6px}
+  .card span{display:block;color:var(--mid);margin-top:4px;line-height:1.3}
+  .card.on{border-color:var(--gold);background:linear-gradient(160deg,rgba(243,201,105,.22),rgba(243,201,105,.08))}
+  .card.lock{opacity:.4;cursor:default;border-style:dashed}
+  .rounds{display:grid;gap:0;margin:12px 0;border-top:2px solid var(--ink)}
+  .rd{display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--rule);padding:10px 2px}
+  .rd .n{width:26px;height:26px;border-radius:3px;background:var(--soft);display:grid;place-items:center;font-family:var(--fd);font-weight:800;font-size:16px;flex:none}
+  .rd.cur .n{background:var(--colla);color:#fff}
+  .rd .mid{flex:1}
+  .rd>b{font-family:var(--fd);font-size:20px;font-variant-numeric:tabular-nums}
+  .res-D{color:var(--ok);font-weight:600}.res-C{color:var(--warn);font-weight:600}.res-I{color:var(--bad);font-weight:600}.res-ID{color:var(--mid)}
+  table{width:100%;border-collapse:collapse;font-size:14px;margin-top:6px;border-top:2px solid var(--ink)}
+  td{padding:8px 4px;border-bottom:1px solid var(--rule);vertical-align:top}
+  td:first-child{font-family:var(--fd);font-weight:700;color:var(--mid);width:26px}
+  td.r{text-align:right;font-family:var(--fd);font-weight:800;font-size:17px;font-variant-numeric:tabular-nums}
+  tr.me td{background:var(--soft);font-weight:700}
+  tr.me td:first-child{box-shadow:inset 4px 0 0 var(--colla);padding-left:8px}
+  .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+  .chips span{font-size:13px;border:1.5px solid var(--rule);border-radius:4px;padding:4px 8px;font-weight:600}
+  .chips .up{color:var(--ok);border-color:currentColor}.chips .dn{color:var(--bad);border-color:currentColor}
+  .big{font-family:var(--fd);font-weight:800;font-size:54px;line-height:.88;margin:2px 0 8px}
+  .score{font-family:var(--fd);font-weight:800;font-size:46px;font-variant-numeric:tabular-nums;line-height:1}
+  .score small{font-family:var(--fb);font-size:15px;color:var(--mid);font-weight:600;margin-left:4px}
+  .center{text-align:center}
+  .colors{display:flex;flex-wrap:wrap;gap:9px}
+  .rtag{font-style:normal;font-size:11px;padding:1px 6px;border-radius:3px;border:1.5px solid currentColor;color:var(--warn);margin-left:4px}
+  .dot{display:inline-block;width:12px;height:12px;border-radius:2px;margin-right:8px;vertical-align:0;box-shadow:inset 0 0 0 1px rgba(255,255,255,.3)}
+  .seg{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:6px 0 4px}
+  .seg button{padding:10px;border-radius:8px;border:2px solid var(--rule);background:transparent;color:inherit;font:inherit;cursor:pointer;text-align:left}
+  .seg button.on{border-color:var(--ink);box-shadow:inset 0 -4px 0 var(--colla)}
+  .seg button b{display:block;font-family:var(--fd);font-size:19px;font-weight:800;line-height:1}
+  .seg button span{display:block;font-size:12.5px;color:var(--mid);margin-top:3px;line-height:1.3}
+  .chip{width:38px;height:38px;border-radius:6px;border:2px solid var(--paper);box-shadow:0 0 0 1.5px var(--rule);cursor:pointer}
+  .chip.on{box-shadow:0 0 0 3px var(--ink)}
+  select,input[type=text]{width:100%;font:inherit;font-size:16px;font-weight:600;padding:12px 14px;border-radius:8px;border:2px solid var(--rule);background:#262c3d;color:var(--ink);margin:6px 0 4px}
+  input[type=text]{font-size:17px;user-select:text;-webkit-user-select:text}
+  label{display:block;font-size:14px;color:var(--mid);margin-bottom:6px}
+  .how{margin:8px 0 0;padding:0;list-style:none;display:grid;gap:0;font-size:14.5px;color:#d6d8de;line-height:1.45;border-top:1px solid var(--rule)}
+  .how li{padding:9px 0;border-bottom:1px solid var(--rule)}
+  .how b{color:var(--ink)}
+  #toast{position:absolute;left:50%;top:14px;transform:translateX(-50%);display:grid;gap:6px;width:min(92vw,420px);pointer-events:none;z-index:5}
+  #toast div{background:var(--faixa);color:#fff;font-weight:600;border-radius:6px;padding:11px 14px;font-size:14.5px;border-left:6px solid var(--colla);box-shadow:0 8px 24px rgba(0,0,0,.35);animation:tin .3s ease-out}
+  @keyframes tin{from{transform:translateY(-10px);opacity:0}}
+  .repte{margin-top:12px;border:2px solid var(--ink);border-radius:8px;padding:12px;background:transparent;box-shadow:4px 4px 0 var(--moc)}
+  .repte b{color:var(--ink)}
+  .shop{display:grid;gap:0;border-top:1px solid var(--rule)}
+  .also{font-size:12px;color:var(--warn);margin-top:3px;font-weight:600}
+  /* sobre de cartes: un mocador plegat */
+  #pack{position:absolute;inset:0;z-index:8;display:grid;place-items:center}
+  .pk-bg{position:absolute;inset:0;background:rgba(0,0,0,.9);animation:pkfade .4s ease-out}
+  .pk-box{position:relative;width:min(92vw,420px);text-align:center}
+  .pk-env{position:absolute;left:50%;top:50%;width:170px;height:118px;margin:-90px 0 0 -85px;border-radius:6px;
+    background-color:var(--moc);background-image:radial-gradient(circle,#fff 2px,transparent 2.5px),radial-gradient(circle,#fff 2px,transparent 2.5px);
+    background-size:16px 16px;background-position:0 0,8px 8px;box-shadow:0 18px 40px rgba(0,0,0,.5);
+    animation:pkshake .7s ease-in-out .1s,pkgone .45s ease-in 1s forwards}
+  .pk-flap{position:absolute;left:0;right:0;top:0;height:60px;background:rgba(0,0,0,.18);
+    clip-path:polygon(0 0,100% 0,50% 100%);transform-origin:top;animation:pkflap .35s ease-in .8s forwards}
+  .pk-seal{display:none}
+  .pk-cards{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:10px}
+  .pc{perspective:900px;opacity:0;animation:pkin .5s cubic-bezier(.2,1.3,.4,1) var(--d) forwards}
+  .pc-in{position:relative;height:190px;transform-style:preserve-3d;transform:rotateY(180deg);animation:pkflip .6s ease calc(var(--d) + .25s) forwards;border-radius:8px}
+  .pc-in.glow{box-shadow:0 0 0 2px var(--gold),0 0 26px rgba(243,201,105,.7)}
+  .pc-f{position:absolute;inset:0;border-radius:8px;backface-visibility:hidden;-webkit-backface-visibility:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:10px;gap:6px}
+  .pc-back{transform:rotateY(180deg);background-color:var(--moc);background-image:radial-gradient(circle,#fff 2px,transparent 2.5px),radial-gradient(circle,#fff 2px,transparent 2.5px);
+    background-size:16px 16px;background-position:0 0,8px 8px;border:3px solid #fff}
+  .pc-back span{display:none}
+  .pc-face{background:linear-gradient(160deg,#2a3450,#1a2032);color:var(--ink);border:1.5px solid rgba(243,201,105,.55)}
+  .pc-ic{font-size:40px;line-height:1}
+  .pc-face b{font-family:var(--fd);font-size:21px;font-weight:800;line-height:1}
+  .pc-lv{color:var(--gold);font-size:14px;letter-spacing:1px}.pc-lv i{font-style:normal;opacity:.25}
+  .pc-cp{font-size:12.5px;color:var(--mid)}
+  .pc-up{font-size:12px;font-weight:700;color:#1a1408;background:var(--gold);border-radius:4px;padding:3px 8px}
+  .pk-ok{opacity:0;animation:pkfade .4s ease 3.4s forwards;max-width:300px;margin:12px auto 0}
+  .pk-ok.btn.main{background:#fff;color:#151515;border-color:#fff}
+  @keyframes pkfade{from{opacity:0}to{opacity:1}}
+  @keyframes pkshake{0%,100%{transform:rotate(0)}20%{transform:rotate(-6deg) scale(1.04)}40%{transform:rotate(6deg) scale(1.06)}60%{transform:rotate(-4deg) scale(1.08)}80%{transform:rotate(3deg) scale(1.1)}}
+  @keyframes pkflap{to{transform:rotateX(180deg);opacity:.2}}
+  @keyframes pkgone{to{transform:scale(1.4);opacity:0}}
+  @keyframes pkin{from{opacity:0;transform:translateY(60px) scale(.6)}to{opacity:1;transform:none}}
+  @keyframes pkflip{to{transform:rotateY(0)}}
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}#pack .pc,#pack .pk-ok{opacity:1}#pack .pc-in{transform:none}#pack .pk-env{display:none}}
+</style>
+</head>
+<body>
+<div id="app">
+  <canvas id="c"></canvas>
+  <div id="play" class="hidden">
+    <div class="top">
+      <div class="ttl"><b id="pName"></b><span id="pPhase"></span></div>
+      <div class="pts"><span id="pPts"></span><small>punts</small></div>
+    </div>
+    <div id="hint"></div>
+    <button id="dismount">Desmunta</button>
+  </div>
+  <div id="ui"></div>
+  <div id="toast"></div>
+</div>
+
+<script>
+'use strict';
+/* =========================================================
+   DADES: taula de puntuacions del Concurs de Castells 2026
+   [codi, descarregat, carregat, amplada, pisos, modificadors, a la taula]
+   ========================================================= */
+const RAW=[
+ ['Pd4',120,100,1,4,'',0],['3d6',200,165,3,6,'',0],['4d6',180,150,4,6,'',0],['5d6',240,200,5,6,'',0],
+ ['2d6',300,250,2,6,''],['Pd5',315,260,1,5,''],['9d6',355,295,9,6,''],['4d7',395,325,4,7,''],['3d7',415,345,3,7,''],
+ ['4d7a',515,465,4,7,'a'],['3d7a',545,485,3,7,'a'],['7d7',555,460,7,7,''],['5d7',565,470,5,7,''],['7d7a',640,570,7,7,'a'],
+ ['5d7a',670,605,5,7,'a'],['3d7s',705,635,3,7,'s'],['9d7',740,615,9,7,''],['2d7',805,670,2,7,''],['4d8',845,700,4,8,''],
+ ['Pd6',920,765,1,6,''],['3d8',970,805,3,8,''],['7d8',1090,905,7,8,''],['2d8f',1210,1005,2,8,'f'],['Pd7f',1270,1055,1,7,'f'],
+ ['5d8',1385,1150,5,8,''],['4d8a',1455,1310,4,8,'a'],['3d8a',1530,1375,3,8,'a'],['7d8a',1635,1475,7,8,'a'],['5d8a',1730,1555,5,8,'a'],
+ ['4d9f',1820,1510,4,9,'f'],['3d9f',1910,1585,3,9,'f'],['9d8',2385,1980,9,8,''],['3d8s',2600,2340,3,8,'s'],['2d9fm',2730,2265,2,9,'fm'],
+ ['Pd8fm',2870,2380,1,8,'fm'],['7d9f',3010,2500,7,9,'f'],['5d9f',3125,2595,5,9,'f'],['4d9af',3285,2955,4,9,'af'],['3d9af',3445,3100,3,9,'af'],
+ ['4d9sf',4105,3405,4,9,'sf'],['2d8sf',4310,3575,2,8,'sf'],['3d10fm',4525,3755,3,10,'fm'],['4d10fm',4930,4095,4,10,'fm'],['9d9f',5180,4295,9,9,'f'],
+ ['2d9sm',5645,4685,2,9,'sm'],['Pd9fmp',5925,4920,1,9,'fmp'],['3d9sf',6220,5165,3,9,'sf'],['Pd7sf',6360,5280,1,7,'sf'],
+ ['2d10fmp',6780,5630,2,10,'fmp'],['4d10sm',7120,5910,4,10,'sm'],['3d10sm',7475,6205,3,10,'sm'],
+];
+const PRE={'5d6':'4d6','Pd5':'Pd4','9d6':'5d6','4d7':'4d6','3d7':'3d6','4d7a':'4d7','3d7a':'3d7','5d7':'5d6','7d7':'5d7',
+ '7d7a':'7d7','5d7a':'5d7','3d7s':'3d7a','9d7':'7d7','2d7':'2d6','4d8':'4d7','Pd6':'Pd5','3d8':'3d7','7d8':'7d7','2d8f':'2d7','Pd7f':'Pd6',
+ '5d8':'5d7','4d8a':'4d8','3d8a':'3d8','7d8a':'7d8','5d8a':'5d8','4d9f':'4d8','3d9f':'3d8','9d8':'9d7','3d8s':'3d7s','2d9fm':'2d8f','Pd8fm':'Pd7f',
+ '7d9f':'7d8','5d9f':'5d8','4d9af':'4d9f','3d9af':'3d9f','4d9sf':'4d9f','2d8sf':'2d8f','3d10fm':'3d9f','4d10fm':'4d9f','9d9f':'9d8','2d9sm':'2d9fm',
+ 'Pd9fmp':'Pd8fm','3d9sf':'3d9f','Pd7sf':'Pd7f','2d10fmp':'2d9fm','4d10sm':'4d10fm','3d10sm':'3d10fm'};
+const MODNAME={'':'','a':' amb l’agulla','s':' aixecat per sota','f':' amb folre','fm':' amb folre i manilles','fmp':' amb folre, manilles i puntals',
+ 'af':' amb folre i l’agulla','sf':' sense folre','sm':' amb folre, sense manilles'};
+// Gent necessària. La pinya (soca) es compta per cordons: cada cordó és un anell al voltant dels baixos,
+// més gran com més lluny és del tronc. Cordons segons l’enquesta de la Coordinadora (3d6: 4, 3d7: 5, 3d8: 6,
+// 2d8f: 8, 3d9f: 9); calibrat perquè el 3d7 amb 5 cordons surti a uns 112 castellers.
+// El folre, les manilles i els puntals són pinyes de 3, 2 i 1 cordó damunt de la soca, i obliguen a fer una soca més gran.
+const R0={1:.5,2:.8,3:1,4:1.3,5:1.6,7:2.2,9:2.6},AL=4.8;
+function cordons(w,n,mods,f,m,p){
+  if(mods==='sf')return w===1?n+2:n+1;
+  if(p)return 12;
+  if(m||mods==='sm')return n===10?11:10;
+  if(f)return n>=9?9:8;
+  return w===1?n-1:n-2;
+}
+// Nomenclatura: vallenca (2 de, amb pilar, anxaneta, acotxador) o vilafranquina (torre, amb l’agulla, enxaneta, aixecador)
+let NOMK=(()=>{try{return localStorage.getItem('fem-pinya-nom')||'vallenca';}catch(e){return 'vallenca';}})();
+const VALL=()=>NOMK==='vallenca';
+function castName(c){
+  const V=VALL();let b=c.w===1?`Pilar de ${c.n}`:(c.w===2&&!V)?`Torre de ${c.n}`:`${c.w} de ${c.n}`;
+  let m=MODNAME[c.mods];if(V)m=m.replace(' amb l’agulla',' amb pilar').replace(' i l’agulla',' i pilar');return b+m;}
+function cd(code){return VALL()?code.replace(/^(\dd\d+)a(f?)$/,(x,a,f)=>a+(f?'fp':'p')):code.replace(/^2d/,'Td');}
+function cdList(s){return String(s).replace(/\d+d\d+[a-z]*/g,m=>cd(m));}
+function tx(t){t=String(t);return VALL()?t.replace(/enxaneta/g,'anxaneta').replace(/Enxaneta/g,'Anxaneta'):t.replace(/acotxador/g,'aixecador').replace(/Acotxador/g,'Aixecador');}
+function NOM(){return VALL()?{carregatAg:'Castell carregat: només queda el pilar',aletaAg:'L’anxaneta fa l’aleta dalt del pilar!',quedaAg:'Queda el pilar del mig: ara baixa',
+    passaAg:'L’anxaneta passa al pilar amb l’ajuda dels dosos',fetAg:'Castell i pilar descarregats!',agOf:'del pilar'}
+  :{carregatAg:'Castell carregat: només queda l’agulla',aletaAg:'L’enxaneta fa l’aleta dalt de l’agulla!',quedaAg:'Queda l’agulla: ara baixa',
+    passaAg:'L’enxaneta passa a l’agulla amb l’ajuda dels dosos',fetAg:'Castell i agulla descarregats!',agOf:'de l’agulla'};}
+const CAST=RAW.map(r=>{
+  const [code,d,c,w,n,mods]=r,table=r[6]!==0;
+  const f=(mods.includes('f')&&mods!=='sf')||mods==='sm',m=mods==='fm'||mods==='fmp',p=mods==='fmp';
+  const tronc=w===1?n-1:w===2?n-2:n-3;
+  const C=cordons(w,n,mods,f,m,p),r0=R0[w],pom=w===1?1:w===9?12:w>=5?7:w===2?2:4;
+  const soca=AL*(C*r0+C*(C+1)/2),folre=f?AL*(3*r0+6):0,manilles=m?AL*(2*r0+3):0,puntals=p?AL*(r0+1):0;
+  let req=soca+folre+manilles+puntals+tronc*w+pom+(mods.includes('a')?n-3+8:0)+(mods==='s'?10:0);
+  req=Math.round(req/5)*5;
+  const diff=Math.max(0,Math.min(1,(Math.log(d)-Math.log(120))/(Math.log(7475)-Math.log(120))));
+  return {code,d,c,w,n,mods,table,f,m,p,a:mods.includes('a'),s:mods==='s',pilar:w===1,req0:req,get req(){return vallsB()?Math.round(this.req0*.9/5)*5:this.req0;},diff,
+    get name(){return castName(this);}};
+});
+const CM={};CAST.forEach(c=>CM[c.code]=c);
+const TBL=CAST.filter(c=>c.table&&!c.pilar).sort((a,b)=>a.d-b.d);
+const PIL=['Pd4','Pd5','Pd6','Pd7f','Pd8fm'].map(k=>CM[k]);
+function ancestors(code){const out=[];let p=PRE[code];while(p){out.push(p);p=PRE[p];}return out;}
+
+/* ---------- Calendari: de Sant Joan a Tots Sants ---------- */
+const CAL=[
+  {name:'Diada de Sant Joan',when:'juny',big:1,tod:'mati'},
+  {name:'Diada de Sant Pere',when:'juny',big:1,tod:'tarda'},
+  {name:'Festa major',when:'juliol',town:1,tod:'vespre'},
+  {name:'Festa major',when:'juliol',town:1,tod:'tarda'},
+  {name:'Diada de la colla',when:'juliol',own:1,tod:'tarda'},
+  {name:'Festa major',when:'juliol',town:1,tod:'mati'},
+  {name:'Festa major',when:'agost',town:1,tod:'vespre'},
+  {name:'Festa major',when:'agost',town:1,tod:'tarda'},
+  {name:'Festa major',when:'agost',town:1,tod:'vespre'},
+  {name:'Festa major',when:'agost',town:1,tod:'tarda'},
+  {name:'Diada de Sant Fèlix',when:'agost',big:1,tod:'mati'},
+  {name:'Festa major',when:'setembre',town:1,tod:'tarda'},
+  {name:'Festa major',when:'setembre',town:1,tod:'vespre'},
+  {name:'Diada de Santa Tecla',when:'setembre',big:1,tod:'mati'},
+  {name:'Festes de la Mercè',when:'setembre',big:1,tod:'tarda'},
+  {name:'Concurs de Castells',when:'octubre',concurs:1,tod:'tarda'},
+  {name:'Festa major',when:'octubre',town:1,tod:'mati'},
+  {name:'Diada de Santa Úrsula',when:'octubre',big:1,tod:'tarda'},
+  {name:'Diada de Sant Narcís',when:'octubre',big:1,tod:'vespre'},
+  {name:'Diada de Tots Sants',when:'novembre',big:1,tod:'mati'},
+];
+function evName(i){const e=CAL[i];{const RE=realEv(i);if(RE&&RE.name)return RE.name;}if(e.town&&S&&S.towns){ensureTowns();}if(e.town&&S&&S.towns)return `Festa major ${deTown(RIV[S.towns[i]].town)}`;if(e.own&&S)return `Diada ${collaDe(S.colla.name)}`;return e.name;}
+
+/* ---------- 40 colles rivals inventades ---------- */
+const FAKE=[
+ ['Colla Vella de Vilamar','Vilamar','4d10fm'],['Castellers de Riudebell','Riudebell','3d10fm'],['Colla Jove de Pedralta','Pedralta','4d9sf'],
+ ['Minyons de Torrenova','Torrenova','2d9fm'],['Xiquets de Montfred','Montfred','5d9f'],['Colla Nova de Sant Aleix','Sant Aleix','3d9af'],
+ ['Castellers de Fontalba','Fontalba','7d9f'],['Marrecs de Roquerola','Roquerola','4d9af'],['Xiquets de Vilaclara','Vilaclara','3d9f'],
+ ['Castellers de Puigdolç','Puigdolç','3d9f'],['Nens de Rocafosca','Rocafosca','4d9f'],['Colla Jove de Vallmorera','Vallmorera','4d9f'],
+ ['Castellers de Mollerona','Mollerona','9d8'],['Xiquets de Pradesca','Pradesca','5d8a'],['Minyons d’Aiguaclara','Aiguaclara','5d8'],
+ ['Castellers de Rocaverd','Rocaverd','2d8f'],['Colla de Santa Lliura','Santa Lliura','5d8'],['Marrecs de Vilabruna','Vilabruna','7d8'],
+ ['Castellers de Coma-roja','Coma-roja','2d8f'],['Xiquets de l’Estany Blau','l’Estany Blau','3d8'],['Nens del Pla de Sant Iscle','Sant Iscle','4d8a'],
+ ['Castellers de Montsalat','Montsalat','3d8'],['Colla Jove de Ribaverda','Ribaverda','7d8'],['Xiquets de Castellblau','Castellblau','4d8'],
+ ['Castellers de Torredolça','Torredolça','3d8'],['Minyons de Puigventós','Puigventós','2d7'],['Colla de Sant Feliu de l’Alzina','l’Alzina','4d8'],
+ ['Castellers de Fontgelada','Fontgelada','9d7'],['Marrecs de Vallserena','Vallserena','3d8'],['Xiquets de Roca d’Ocell','Roca d’Ocell','3d7s'],
+ ['Castellers de Pinedell','Pinedell','5d7a'],['Colla Jove de Marbrera','Marbrera','5d7'],['Nens de l’Aldea de Sol','l’Aldea de Sol','3d7a'],
+ ['Castellers de Riupedrós','Riupedrós','4d7a'],['Xiquets del Cingle','el Cingle','3d7'],['Castellers de Sant Jaume de l’Era','l’Era','4d7'],
+ ['Colla d’Oliverar','Oliverar','3d7'],['Minyons de Cardonell','Cardonell','9d6'],['Castellers del Turó Gros','el Turó Gros','2d6'],
+ ['Xiquets de Masnovell','Masnovell','4d7'],
+].map((r,i)=>({name:r[0],town:r[1],code:r[2],col:['#c8312b','#2f8a4a','#5aa9e0','#e2789f','#7a1f2b','#e2ad24','#6a4c9c','#e5762f','#24427e','#d9d4c7','#1f7f7a','#8a5a3b'][i%12]}));
+
+/* ---------- 40 colles reals (nivell aproximat a les temporades 2025-2026; les actuacions del joc són simulades) ---------- */
+const REAL=[
+ ['Castellers de Vilafranca','Vilafranca del Penedès','4d10fm','#2f8a4a'],['Colla Vella dels Xiquets de Valls','Valls','4d10fm','#e98aa2'],
+ ['Colla Joves Xiquets de Valls','Valls','3d10fm','#c8312b'],['Colla Jove Xiquets de Tarragona','Tarragona','3d9af','#9670bd'],
+ ['Minyons de Terrassa','Terrassa','2d9fm','#a986b0'],['Castellers de Sants','Sants','4d9f','#8e9297'],
+ ['Capgrossos de Mataró','Mataró','4d9f','#23407a'],['Moixiganguers d’Igualada','Igualada','3d9f','#6d3f8f'],
+ ['Xiquets de Tarragona','Tarragona','3d9f','#d43a2f','#f4f1ea'],['Castellers de la Vila de Gràcia','Gràcia','3d9f','#1f3463'],
+ ['Xiquets de Reus','Reus','3d9f','#a67b52'],['Colla Castellera Sant Pere i Sant Pau','Sant Pere i Sant Pau','5d8','#3c9a5c'],
+ ['Castellers de Barcelona','Barcelona','3d9f','#c62a2a'],['Castellers de Sabadell','Sabadell','5d8','#1d5a3a'],
+ ['Marrecs de Salt','Salt','5d8','#2f80b9'],['Xics de Granollers','Granollers','7d8','#8a1f2e'],
+ ['Sagals d’Osona','Vic','7d8','#ea8a2a'],['Nens del Vendrell','el Vendrell','7d8','#d02f2f'],
+ ['Castellers de Lleida','Lleida','3d8','#6e1f2e'],['Castellers de Sant Cugat','Sant Cugat','4d8','#2d5c3d'],
+ ['Bordegassos de Vilanova','Vilanova i la Geltrú','4d8','#f3c22c'],['Xiquets del Serrallo','el Serrallo','4d8','#2c68b0'],
+ ['Colla Castellera Jove de Barcelona','Sant Andreu','3d8','#b8202e'],['Xicots de Vilafranca','Vilafranca','3d8','#b8262b'],
+ ['Castellers de Castelldefels','Castelldefels','3d8','#f0cf3a'],['Colla Jove de Castellers de Sitges','Sitges','3d8','#7a2336'],
+ ['Castellers d’Esplugues','Esplugues','7d7','#1d55c9'],['Castellers de Terrassa','Terrassa','7d7','#2bb3b1'],
+ ['Tirallongues de Manresa','Manresa','7d7','#8e9399','#c4c8cc'],['Nois de la Torre','la Torre de Claramunt','7d7','#8cc4ea'],
+ ['Castellers de la Sagrada Família','Sagrada Família','5d7a','#3f8f4a'],['Castellers d’Esparreguera','Esparreguera','3d7s','#6b1f30'],
+ ['Castellers de Sarrià','Sarrià','4d7a','#7b1f35'],['Castellers de Badalona','Badalona','4d7a','#e7a73a'],
+ ['Castellers de Cornellà','Cornellà','5d7','#8b68c6'],['Castellers de Mollet','Mollet','5d7','#3a9a4a'],
+ ['Colla Castellera de Figueres','Figueres','2d7','#9d6cba'],['Castellers de Berga','Berga','3d7a','#22335f'],
+ ['Castellers del Poble Sec','el Poble-sec','4d7a','#7fbbe6'],['Esperxats de l’Estany','Banyoles','3d7','#1f5a3a'],
+].map(r=>({name:r[0],town:r[1],code:r[2],col:r[3],st:r[4]||null}));
+let RIV=FAKE;
+// colles fundadores: les dues colles de Valls
+const VALLSN=new Set(['Colla Vella dels Xiquets de Valls','Colla Joves Xiquets de Valls']);
+function vallsB(){return !!(S&&S.colla&&S.colla.real&&VALLSN.has(S.colla.name));}
+function setRiv(){RIV=S&&S.real?REAL.filter(r=>!(S.colla.real&&r.name===S.colla.name)):FAKE;}
+function collaDe(n){return /^Colla/.test(n)?'de la '+n:/^Tirallongues/.test(n)?'de les '+n:/^(Castellers|Xiquets|Minyons|Marrecs|Nens|Xics|Sagals|Bordegassos|Moixiganguers|Capgrossos|Nois|Esperxats|Xicots|Brivalls|Torraires|Manyacs|Salats)/.test(n)?'dels '+n:'de '+n;}
+const cdot=r=>`<i class="dot" style="background:${typeof r==='string'?r:r.st?`repeating-linear-gradient(90deg,${r.col} 0 2px,${r.st} 2px 4px)`:r.col}"></i>`;
+
+/* ---------- Cartes ---------- */
+const LVMAX=5,LVNEED=[0,2,4,8,16];
+const mul=L=>1+.35*(L-1);
+const pc=x=>Math.round(x*100)+' %';
+const red=(b,L,cap)=>Math.min(cap||.7,b*mul(L));
+const CARDS=[
+  {id:'gralles',ico:'🎺',name:'Gralles a tot drap',d:L=>`El castell tremola un ${pc(red(.2,L))} menys.`},
+  {id:'pinya',ico:'🤝',name:'Pinya compacta',d:L=>`El castell s’inclina un ${pc(red(.15,L))} menys.`},
+  {id:'germanor',ico:'🫂',name:'Esperit de germanor',d:L=>`+${Math.round(8*mul(L))} de moral en començar la diada.`},
+  {id:'cap',ico:'📣',name:'Cap de colla veterà',d:L=>`Aguanta un ${pc(.15*mul(L))} més d’inclinació.`,fite:'Descarrega un castell de 7'},
+  {id:'enxaneta',ico:'⚡',name:'Enxaneta llampec',d:L=>`El pom de dalt puja i baixa un ${pc(red(.4,L))} més ràpid.`,fite:'Descarrega un castell de 8'},
+  {id:'assaig',ico:'📋',name:'Assaig general',d:L=>`+${Math.round(25*mul(L))} de preparació a tots els castells de la diada.`,fite:'Fes 4 diades'},
+  {id:'segona',ico:'🔁',name:'Segona oportunitat',d:L=>{const n=1+Math.floor((L-1)/2);return n>1?`Les ${n} primeres llenyes de la diada no gasten ronda.`:'La primera llenya de la diada no gasta la ronda.';},fite:'Fes llenya per primer cop'},
+  {id:'folre',ico:'🧱',name:'Folre de ferro',d:L=>`Els castells amb folre s’inclinen un ${pc(red(.25,L))} menys.`,fite:'Carrega un castell amb folre'},
+  {id:'placa',ico:'🏟️',name:'Plaça plena',d:L=>`+${pc(.15*mul(L))} de punts a la diada. No val al Concurs.`,fite:'Fes 2.000 punts en una diada'},
+  {id:'mans',ico:'✊',name:'Mans de ferro',d:L=>`Aguanta ${(1+mul(L)).toFixed(1).replace('.',',')} vegades més temps fora de la zona.`,fite:'Descarrega els 3 castells d’una diada'},
+  {id:'canalla',ico:'🧒',name:'Canalla valenta',d:L=>`L’aleta i la baixada són un ${pc(red(.3,L,.6))} més ràpides.`,fite:'Descarrega 10 castells'},
+  {id:'mistica',ico:'✨',name:'Mística de colla',d:L=>L>1?`La colla respon amb la moral màxima i tot costa una mica menys.`:'La colla respon com si la moral fos màxima.',fite:'Puja al podi del Concurs'},
+  {id:'pilarfe',ico:'🕯️',name:'Pilar de fe',d:L=>`Els pilars s’inclinen un ${pc(red(.2,L))} menys i aguanten més.`,fite:'Descarrega el pilar de 6'},
+  {id:'torre',ico:'🗼',name:'Torre bessona',d:L=>`Les torres (2 de) s’inclinen un ${pc(red(.15,L))} menys.`,fite:'Descarrega el 2 de 7'},
+  {id:'quatre',ico:'🟫',name:'Quatre pilars',d:L=>`Els castells de 4 tremolen un ${pc(red(.2,L))} menys.`,fite:'Descarrega el 4 de 8'},
+  {id:'agulla',ico:'📍',name:'Agulla segura',d:L=>`Els castells amb agulla s’inclinen un ${pc(red(.25,L))} menys.`,fite:'Descarrega un castell amb agulla'},
+  {id:'persota',ico:'⬆️',name:'Força per sota',d:L=>`Els castells aixecats per sota tremolen un ${pc(red(.3,L))} menys.`,fite:'Descarrega un castell per sota'},
+  {id:'manilles',ico:'⛓️',name:'Manilles d’acer',d:L=>`Amb manilles, aguanta un ${pc(.2*mul(L))} més d’inclinació.`,fite:'Carrega un castell amb manilles'},
+  {id:'baixos',ico:'🪨',name:'Baixos de roca',d:L=>`Els cops sobtats són un ${pc(red(.4,L,.8))} més suaus.`,repte:1},
+  {id:'tronc',ico:'🪵',name:'Tronc de seda',d:L=>`Els castells de 6 i de 7 tremolen un ${pc(red(.25,L))} menys.`,repte:1},
+  {id:'reclam',ico:'📢',name:'Reclam de festa major',d:L=>`${Math.round(6*mul(L))} castellers nous després de la diada.`,repte:1},
+  {id:'ronda',ico:'➕',name:'Ronda extra',d:L=>'Una ronda més a la diada. No val al Concurs.',repte:1},
+  {id:'fitxatge',ico:'🌟',name:'Fitxatge estrella',d:L=>`+${Math.round(15*mul(L))} castellers disponibles a la diada.`,repte:1},
+  {id:'pinyes',ico:'🧑‍🤝‍🧑',name:'Colla amiga a la pinya',d:L=>`+${Math.round(30*mul(L))} castellers disponibles a la diada.`,repte:1},
+  {id:'tecnic',ico:'🧠',name:'Equip tècnic',d:L=>`Tots els castells són més fàcils (${pc(.06*mul(L))} menys de risc).`,repte:1},
+  {id:'sort',ico:'🍀',name:'Sort de l’estrena',d:L=>`Els castells que no has descarregat mai tenen un ${pc(.1*mul(L))} menys de risc.`,repte:1},
+  {id:'vent',ico:'🌬️',name:'Plaça arrecerada',d:L=>`El castell s’atura un ${pc(.5*mul(L)/.7)} abans quan oscil·la.`,repte:1},
+  {id:'silenci',ico:'🤫',name:'Silenci a plaça',d:L=>`Tot passa un ${pc(red(.15,L,.4))} més a poc a poc.`,repte:1},
+  {id:'premsa',ico:'📺',name:'Diada televisada',d:L=>`Multiplica per ${(1+mul(L)).toFixed(1).replace('.',',')} el bonus casteller de la diada.`,repte:1},
+  {id:'mocadors',ico:'🏳️',name:'Mocadors al vent',d:L=>`+${Math.round(4*mul(L))} de moral per cada castell descarregat.`,repte:1},
+  {id:'obert',ico:'🚪',name:'Assaig obert',d:L=>`${2+Math.floor((L-1)/2)} assajos més la setmana següent.`,repte:1},
+  {id:'ambicio',ico:'🎯',name:'Ambició',d:L=>{const n=1+Math.floor((L-1)/2);return `${n>1?`Els ${n} primers carregats`:'El primer carregat'} de la diada puntua${n>1?'n':''} com a descarregat. No val al Concurs.`;},repte:1},
+];
+CARDS.forEach(c=>{c.name0=c.name;c.d0=c.d;c.fite0=c.fite;});
+function applyNom(){const V=VALL();CARDS.forEach(c=>{
+  let nm=c.name0,fi=c.fite0,dd=c.d0;
+  if(c.id==='torre'){nm=V?'Dos de ferro':'Torre bessona';fi=V?'Descarrega el 2 de 7':'Descarrega la torre de 7';dd=L=>`${V?'Els 2 de':'Les torres'} s’inclinen un ${pc(red(.15,L))} menys.`;}
+  if(c.id==='agulla'){nm=V?'Pilar del mig segur':'Agulla segura';fi=V?'Descarrega un castell amb pilar':'Descarrega un castell amb agulla';dd=L=>`Els castells amb ${V?'pilar':'agulla'} s’inclinen un ${pc(red(.25,L))} menys.`;}
+  c.name=tx(nm);c.fite=fi&&tx(fi);c.d=L=>tx(dd(L));});}
+applyNom();
+const CARDM={};CARDS.forEach(c=>CARDM[c.id]=c);
+function lvOf(id){return S&&S.cardLv&&S.cardLv[id]?S.cardLv[id].lv:1;}
+function cDesc(id){return CARDM[id].d(lvOf(id));}
+function cl(id){return S&&S.diada&&S.diada.cards.includes(id)?lvOf(id):0;}
+const REWARDS=CARDS.filter(c=>c.repte).map(c=>c.id);
+
+/* ---------- Junta: on gastar el bonus casteller ---------- */
+const SHOP=[
+  {id:'assaig',ico:'🕖',name:'Assaig extra',desc:'1 assaig més la setmana vinent.',cost:40},
+  {id:'bus',ico:'🚌',name:'Autocar a la diada',desc:'+10 % de gent disponible a la propera diada.',cost:50},
+  {id:'cervesa',ico:'🍺',name:'Sortidor de cervesa gratuït',desc:'+10 de moral i 3 castellers nous.',cost:60},
+  {id:'fisio',ico:'🩺',name:'Fisioterapeuta',desc:'Recupera tots els lesionats.',cost:70},
+  {id:'sopar',ico:'🍲',name:'Sopar de germanor',desc:'+15 de moral i 5 castellers nous.',cost:90},
+  {id:'camises',ico:'👕',name:'Camises noves',desc:'8 castellers nous i +5 de moral.',cost:100},
+  {id:'costellada',ico:'🔥',name:'Costellada de colla',desc:'+20 de moral.',cost:110},
+  {id:'xarxes',ico:'📱',name:'Campanya a les xarxes',desc:'12 castellers nous.',cost:120},
+  {id:'escola',ico:'🏫',name:'Escola de canalla',desc:'+10 de preparació a tots els castells desbloquejats.',cost:150},
+  {id:'sobre',ico:'🃏',name:'Sobre de cartes',desc:'4 còpies a l’atzar de cartes que ja tens desbloquejades. Amb còpies, les cartes pugen de nivell.',cost:100},
+];
+
+const COLORS=['#c8312b','#2f8a4a','#5aa9e0','#e2789f','#7a1f2b','#e2ad24','#6a4c9c','#e5762f','#24427e','#f2f0ea','#1f7f7a','#8a5a3b'];
+const SKINS=['#f1c7a5','#e4b08c','#d39c76','#f5d3b8','#b97e5a','#c98d65'];
+const HAIRS=['#2a1c14','#4a2f1d','#6e4b2e','#151515','#8d8a86','#9a6232','#1f1a17'];
+const PUBLIC=['#36507a','#e7e4dc','#2b2d42','#8d99ae','#b08d2b','#6d597a','#4f772d','#9c3d3d','#d8c3a5','#3f6e6a','#f4f1ea','#e0a3a3'];
+const OL='#2e1e14';
+const fmt=n=>Math.round(n).toLocaleString('ca-ES');
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"]/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch]));
+const pick=a=>a[(Math.random()*a.length)|0];
+let view='home',tab='castells',tmp={};
+
+/* ================= Desament ================= */
+const KEY='fem-pinya-temporada-v2';
+let S=null;
+function load(){try{const s=localStorage.getItem(KEY);if(s)S=JSON.parse(s);}catch(e){S=null;}}
+function persist(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
+function deTown(t){return t.startsWith('el ')?'del '+t.slice(3):/^[AEIOUÀÈÉÍÒÓÚ]/.test(t)?'d’'+t:'de '+t;}
+function ensureTowns(){const used=new Set(Object.values(S.towns).map(k=>RIV[k].town));let ch=false,g=0;
+  CAL.forEach((e,i)=>{if(e.town&&S.towns[i]==null){let k;do{k=(Math.random()*RIV.length)|0;}while(used.has(RIV[k].town)&&++g<400);used.add(RIV[k].town);S.towns[i]=k;ch=true;}});if(ch)persist();}
+function seasonTowns(){const t={};const used=new Set();let g=0;CAL.forEach((e,i)=>{if(e.town){let k;do{k=(Math.random()*RIV.length)|0;}while(used.has(RIV[k].town)&&++g<400);used.add(RIV[k].town);t[i]=k;}});return t;}
+// comença amb el nivell real de la colla: castells fets fins al seu sostre, i gent i preparació d'acord amb això
+function realStart(R){
+  const top=CM[R.code],D=top.d,out=[];
+  CAST.forEach(c=>{if(INEDIT.has(c.code)||c.d>D)return;
+    S.best[c.code]='D';S.prep[c.code]=GE.has(c.code)?Math.round(clamp(92-10*c.d/D,80,90)):Math.round(clamp(88-55*Math.pow(c.d/D,1.4),30,88));});
+  // assegura que tota la cadena fins al castell sostre està oberta
+  ancestors(top.code).forEach(a=>{S.best[a]='D';});
+  S.members=Math.max(120,Math.round(top.req*1.25));S.moral=75;
+  const has=f=>CAST.some(c=>S.best[c.code]==='D'&&f(c));
+  if(has(c=>c.n>=7))giveCard('cap',out);if(has(c=>c.n>=8))giveCard('enxaneta',out);if(has(c=>c.f))giveCard('folre',out);
+  if(has(c=>c.m))giveCard('manilles',out);if(has(c=>c.a))giveCard('agulla',out);if(has(c=>c.s))giveCard('persota',out);
+  if(has(c=>c.code==='2d7'))giveCard('torre',out);if(has(c=>c.code==='4d8'))giveCard('quatre',out);if(has(c=>c.code==='Pd6'))giveCard('pilarfe',out);
+  S.diades=4;giveCard('assaig',out);
+}
+function newSave(name,color,real,as,lvlStart){
+  const R=real&&as!=null&&as>=0?REAL[as]:null;
+  S={v:2,colla:R?{name:R.name,color:-1,col:R.col,st:R.st,real:true}:{name,color},real:!!real,realV2:true,season:1,ev:0,step:'assaig',members:120,moral:70,reqV2:true,injured:[],prep:{},best:{},
+    tot:{D:0,C:0,I:0,ID:0},cards:['gralles','pinya','germanor'],diades:0,seasonBest:0,results:[],wk:null,diada:null,sound:true,
+    rivals:RIV.map(r=>({s:TBL.findIndex(c=>c.code===r.code),best:0,conc:0})),concurs:null,firstPlay:true,
+    bonus:0,buffs:{assaig:0,bus:0},repte:null,towns:{},lastAct:{},cardLv:{gralles:{lv:1,cp:0},pinya:{lv:1,cp:0},germanor:{lv:1,cp:0}}};
+  setRiv();S.rivals=RIV.map(r=>({s:TBL.findIndex(c=>c.code===r.code),best:0,conc:0}));S.towns=seasonTowns();
+  if(R&&lvlStart)realStart(R);
+  persist();
+}
+load();
+if(S&&S.v!==2)S=null;
+if(S&&!S.cardLv){S.cardLv={};}
+if(S)setRiv();
+if(S&&S.real&&!S.realV2){S.rivals=RIV.map(r=>({s:TBL.findIndex(c=>c.code===r.code),best:0,conc:0}));S.towns=seasonTowns();S.lastAct={};S.realV2=true;persist();}
+if(S&&!S.reqV2){S.members=Math.round(S.members*1.4);S.reqV2=true;}
+if(S)S.cards.forEach(id=>{if(!S.cardLv[id])S.cardLv[id]={lv:1,cp:0};});
+const shirt=()=>view==='create'?(tmp.real&&tmp.as>=0?REAL[tmp.as].col:COLORS[tmp.color||0]):S?(S.colla.col||COLORS[S.colla.color]||COLORS[0]):COLORS[0];
+const stripe=()=>view==='create'?(tmp.real&&tmp.as>=0?REAL[tmp.as].st:null):S&&S.colla.st||null;
+function injuredN(){return S.injured.reduce((a,x)=>a+x.n,0);}
+const dCards=()=>S&&S.diada?S.diada.cards:[];
+function moralEff(){return cl('mistica')?100:S.moral;}
+function avail(){
+  let a=Math.round(S.members*(.62+.38*moralEff()/100))-injuredN();
+  if(S.diada){if(cl('fitxatge'))a+=Math.round(15*mul(cl('fitxatge')));if(cl('pinyes'))a+=Math.round(30*mul(cl('pinyes')));if(S.diada.bus)a=Math.round(a*1.1);}
+  return Math.max(0,a);
+}
+function prereqOk(c){const p=PRE[c.code];return !p||S.best[p]==='D';}
+function prepOf(c){return S.prep[c.code]||0;}
+function effE(c,ctxType){
+  const D=ctxType==='diada',L=id=>D?cl(id):0;
+  const extra=L('assaig')?25*mul(L('assaig')):0;
+  const p=clamp(prepOf(c)+extra,0,100)/100,a=avail();
+  const tight=clamp((c.req*1.15-a)/(c.req*.15),0,1);
+  // com més difícil és el castell, més pesa no tenir-lo assajat
+  let E=c.diff*.95+(1-p)*(.3+.35*c.diff)+(p<.15?.15+.15*c.diff:0)+tight*.15-(moralEff()-50)/50*.06;
+  // gamma extra i inèdits: sense una preparació del 80 % gairebé no surten
+  if(GE.has(c.code)||INEDIT.has(c.code)){const ined=INEDIT.has(c.code),short=clamp((.8-p)/.12,0,1);
+    E+=short*(ined?.9:.65)+(ined?.06:0);}
+  if(L('tecnic'))E-=.06*mul(L('tecnic'));
+  if(L('sort')&&S.best[c.code]!=='D')E-=.1*mul(L('sort'));
+  if(L('mistica')>1)E-=.02*(L('mistica')-1);
+  if(ctxType==='assaig')E*=.92;
+  return clamp(E,.03,1.8);
+}
+function riskOf(E){return E<.3?['Fàcil','#58c27d']:E<.55?['Assequible','#a8d46f']:E<.8?['Arriscat','#f3c969']:['Molt arriscat','#ef6b57'];}
+
+/* ================= So ================= */
+let AC=null;
+function ensureAudio(){if(!AC){try{AC=new(window.AudioContext||window.webkitAudioContext)();}catch(e){AC=null;}}if(AC&&AC.state==='suspended')AC.resume().catch(()=>{});}
+const soundOn=()=>!S||S.sound!==false;
+function tone(f,t0,dur,type,vol,bp){
+  if(!AC||!soundOn())return;
+  try{const o=AC.createOscillator(),g=AC.createGain();o.type=type||'sine';o.frequency.value=f;
+    let node=o;if(bp){const q=AC.createBiquadFilter();q.type='bandpass';q.frequency.value=bp;q.Q.value=1.1;o.connect(q);node=q;}
+    node.connect(g);g.connect(AC.destination);const t=AC.currentTime+t0;
+    g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(vol,t+.015);g.gain.exponentialRampToValueAtTime(.0001,t+dur);
+    o.start(t);o.stop(t+dur+.05);}catch(e){}
+}
+function noise(dur,vol,lp){
+  if(!AC||!soundOn())return;
+  try{const b=AC.createBuffer(1,AC.sampleRate*dur,AC.sampleRate),d=b.getChannelData(0);
+    for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/d.length,2);
+    const s=AC.createBufferSource();s.buffer=b;const f=AC.createBiquadFilter();f.type='lowpass';f.frequency.value=lp;
+    const g=AC.createGain();g.gain.value=vol;s.connect(f);f.connect(g);g.connect(AC.destination);s.start();}catch(e){}
+}
+function gralla(f,t0,d){tone(f,t0,d,'sawtooth',.1,1700);tone(f*2,t0,d,'square',.022,2600);tone(f*1.003,t0,d,'sawtooth',.05,1500);}
+const sfx={
+  up(){tone(420,0,.07,'triangle',.08);},
+  ding(){tone(1320,0,.28,'triangle',.13);tone(1980,.05,.25,'triangle',.06);},
+  warn(){tone(220,0,.12,'square',.04,800);},
+  crash(){noise(.8,.5,900);tone(85,0,.45,'sine',.3);},
+  carregat(){[[587,0,.16],[740,.15,.16],[880,.3,.16],[1175,.45,.55]].forEach(n=>gralla(n[0],n[1],n[2]));},
+  descarregat(){[[587,0,.14],[880,.13,.14],[740,.26,.14],[880,.39,.14],[988,.52,.14],[1175,.65,.18],[880,.84,.14],[1175,.98,.7]].forEach(n=>gralla(n[0],n[1],n[2]));}
+};
+/* ---------- Música: toc d’entrada, toc de castells i vermut de fons ---------- */
+const MUS={};let musStarted=false;
+function musicOn(){try{return localStorage.getItem('fem-pinya-musica')!=='0';}catch(e){return true;}}
+function mkAudio(src,loop,vol){try{const a=new Audio(src);a.loop=loop;a.preload='auto';a.volume=vol;a._v=vol;return a;}catch(e){return null;}}
+function initMusic(){if(MUS.bg)return;MUS.bg=mkAudio('audio/vermut.mp3',true,.32);MUS.entrada=mkAudio('audio/entrada.mp3',false,.6);MUS.castells=mkAudio('audio/castells.mp3',true,.7);
+  if(MUS.entrada)MUS.entrada.addEventListener('ended',()=>{if(!att)playBg();});}
+function fadeTo(a,v,ms,done){if(!a)return;clearInterval(a._f);const v0=a.volume,t0=performance.now();
+  a._f=setInterval(()=>{const k=Math.min(1,(performance.now()-t0)/ms);a.volume=Math.max(0,Math.min(1,v0+(v-v0)*k));if(k>=1){clearInterval(a._f);if(done)done();}},40);}
+function stopMus(name,ms){const a=MUS[name];if(!a||a.paused)return;if(!ms){clearInterval(a._f);a.pause();return;}fadeTo(a,0,ms,()=>a.pause());}
+function playMus(name,restart){
+  if(!musicOn())return;initMusic();const a=MUS[name];if(!a)return;
+  ['bg','entrada','castells'].forEach(k=>{if(k!==name)stopMus(k,500);});
+  if(restart)a.currentTime=0;
+  if(a.paused){a.volume=0;const p=a.play();if(p&&p.catch)p.catch(()=>{});}
+  fadeTo(a,a._v,700);musStarted=true;
+}
+function playBg(){if(MUS.entrada&&!MUS.entrada.paused&&!MUS.entrada.ended)return;if(MUS.castells&&!MUS.castells.paused)return;playMus('bg');}
+function setMusic(on){try{localStorage.setItem('fem-pinya-musica',on?'1':'0');}catch(e){}if(on)playBg();else['bg','entrada','castells'].forEach(k=>stopMus(k));}
+function haptic(p){try{navigator.vibrate&&navigator.vibrate(p);}catch(e){}}
+
+/* ================= Canvas ================= */
+const cv=document.getElementById('c');const mainCtx=cv.getContext('2d');let ctx=mainCtx;
+let W=0,H=0,DPR=1,BS=2,ground=0,cx=0,h=60,fw=30,T=0;
+let bg=null,bgTod=null,pinya=null,vign=null,curTod='tarda',CELE=false,CELE_K=0,pinyaKeep=null,celeFrames=null;
+let scene={c:CM['3d6'],F:null};
+let att=null;
+const cam={z:1,Ay:0,tz:1,tAy:0,shake:0};
+function rng(seed){return()=>{seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+const SC=new Map();
+function shade(hex,a){const k=hex+a;let v=SC.get(k);if(v)return v;const n=parseInt(hex.slice(1),16);let r=n>>16,g=n>>8&255,b=n&255;
+  if(a<0){r*=1+a;g*=1+a;b*=1+a;}else{r+=(255-r)*a;g+=(255-g)*a;b+=(255-b)*a;}v=`rgb(${r|0},${g|0},${b|0})`;SC.set(k,v);return v;}
+const VC=new Map();
+function vari(seed){let v=VC.get(seed);if(v)return v;const r=rng(seed*7919+13);
+  v={skin:SKINS[(r()*SKINS.length)|0],hair:HAIRS[(r()*HAIRS.length)|0],moc:r()<.2,style:(r()*3)|0,tone:[-.06,0,.06][(r()*3)|0]};VC.set(seed,v);return v;}
+function rr(x,y,w,hh,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+hh,r);ctx.arcTo(x+w,y+hh,x,y+hh,r);ctx.arcTo(x,y+hh,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();}
+function seg(x1,y1,x2,y2){ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();}
+function dot(x,y,r){ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fill();}
+function limb(pts,wid,col,lw){ctx.beginPath();ctx.moveTo(pts[0],pts[1]);for(let i=2;i<pts.length;i+=2)ctx.lineTo(pts[i],pts[i+1]);
+  ctx.strokeStyle=OL;ctx.lineWidth=wid+lw*2;ctx.stroke();ctx.strokeStyle=col;ctx.lineWidth=wid;ctx.stroke();}
+function hand(x,y,r,skin,lw){ctx.fillStyle=skin;ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fill();ctx.strokeStyle=OL;ctx.lineWidth=lw;ctx.stroke();}
+
+const S1=['baix','segon','terç','quart','quint','sisè','setè','vuitè'];
+function pomCenters(w){const u=.92;return w===5?[-1*u,1.5*u]:w===7?[-1.5*u,2*u]:w===9?[-3*u,0,3*u]:[0];}
+function buildFloors(c){
+  const P=['baixos','segons','terços','quarts','quints','sisens','setens','vuitens'];
+  const line=(n,k)=>Array.from({length:n},(_,j)=>(j-(n-1)/2)*k*.92);
+  const F=[],mk=(role,up,down,k,rh,off,grp,extra)=>Object.assign({count:off.length,role,up,down,k,rh,off,grp:grp||off.map(()=>0)},extra||{});
+  if(c.w===1){for(let i=0;i<c.n-1;i++){const nm=S1[i],dalt=i===c.n-2&&i>0;F.push(mk('tronc',`Puja el ${nm}`,`Baixa el ${nm}`,dalt?.8:1,dalt?.84:1,[0]));}
+    F.push(mk('enxaneta','Puja l’enxaneta','Baixa l’enxaneta',.6,.7,[0]));return F;}
+  const t=c.w===2?c.n-2:c.n-3,C=pomCenters(c.w),np=C.length;
+  for(let i=0;i<t;i++){const nm=P[i];F.push(mk('tronc',`Pugen els ${nm}`,`Baixen els ${nm}`,1,1,line(c.w,1)));}
+  if(c.w>2){const d=.8*.92/2;F.push(mk('dosos',np>1?`Pugen els ${np===2?'dos':'tres'} parells de dosos`:'Pugen els dosos',np>1?'Baixen els dosos':'Baixen els dosos',.8,.84,
+    C.flatMap(cn=>[cn-d,cn+d]),C.flatMap((_,g)=>[g,g])));}
+  F.push(mk('acotxador',np>1?'Pugen els acotxadors':'Puja l’acotxador',np>1?'Baixen els acotxadors':'Baixa l’acotxador',.66,.48,C,C.map((_,g)=>g)));
+  if(c.w===9)F.push(mk('enxaneta','Pugen les tres enxanetes','Baixen les enxanetes',.6,.7,C,C.map((_,g)=>g)));
+  else if(np>1)F.push(mk('enxaneta','Puja l’enxaneta','Baixa l’enxaneta',.6,.7,[C[0]],null,{dbl:C}));
+  else F.push(mk('enxaneta','Puja l’enxaneta','Baixa l’enxaneta',.6,.7,[0]));
+  return F;
+}
+function buildAgulla(c,F){
+  if(!c.a)return null;const t=F.filter(f=>f.role==='tronc').length,A=[];
+  for(let i=0;i<t;i++)A.push({count:1,role:'tronc',k:i===t-1&&i>0?.74:.9,off:[0],grp:[0],src:i,down:`Baixa el ${S1[i]} ${NOM().agOf}`});
+  A.push({count:1,role:'enxaneta',k:.6,off:[0],grp:[0],src:t,top:true,down:'Baixa l’enxaneta'});
+  return A;
+}
+function layoutAgulla(A,F){if(!A)return;
+  A.forEach(p=>{p.y=F[p.src].y;p.hh=p.role==='tronc'?F[p.src].hh:F[F.length-1].hh;});
+  // el de dalt del pilar (el que aguanta l'anxaneta) és més petit, de la mida d'un dosos; l'anxaneta s'hi enfila una mica més avall
+  const t=A.length-2;if(t>0){A[t].hh*=.84;A[t+1].y=A[t].y-A[t].hh;}}
+function layout(F){
+  SPR.clear();
+  let tot=0;F.forEach(f=>tot+=f.rh);
+  h=Math.min((ground-96)/(tot+1.05),H*.13,92);
+  const wu=Math.max(...F.map(f=>Math.max(...f.off)-Math.min(...f.off)+.8*f.k));
+  h=Math.min(h,(W*.88)/(wu*.5));
+  fw=h*.5;let y=ground;F.forEach(f=>{f.y=y;f.hh=f.rh*h;y-=f.hh;});
+}
+function setScene(c,tod){scene={c,F:buildFloors(c)};setTod(tod||'tarda');layout(scene.F);makePinya(scene.F,c);}
+function setTod(t){curTod=t;if(bgTod!==t)makeBg();}
+function resize(){
+  DPR=Math.min(2,window.devicePixelRatio||1);BS=Math.min(3.2,DPR*1.7);
+  W=window.innerWidth;H=window.innerHeight;cv.width=Math.round(W*DPR);cv.height=Math.round(H*DPR);
+  cx=W/2;ground=Math.round(H*.88);bgTod=null;makeBg();makeVignette();
+  pinyaKeep=null;celeFrames=null;if(att){layout(att.F);layoutAgulla(att.A,att.F);makePinya(att.F,att.c);}else{layout(scene.F);makePinya(scene.F,scene.c);}
+  camTarget();cam.z=cam.tz;cam.Ay=cam.tAy;
+}
+function headTop(f){return f.y-f.hh-fw*f.k*.55;}
+function camTarget(){
+  if(!att){const F=scene.F,top=headTop(F[F.length-1])-h*.4;cam.tz=1.1;cam.tAy=H*.05-(top-H)*cam.tz;return;}
+  if(att.phase==='fall'){cam.tz=att.fallZ;cam.tAy=H;return;}
+  let top;
+  if(att.phase==='descentP'){const A=att.A,j=clamp(Math.ceil(att.pu)-1,1,A.length-1);top=headTop(A[j])-h*.55;}
+  else{const j=clamp(Math.ceil(att.up)-1,1,att.n-1);top=headTop(att.F[j])-h*(att.phase==='aleta'||att.phase==='celebra'?.9:.55);}
+  cam.tz=clamp((H-170)/(H-top),1,2.1);cam.tAy=H;
+}
+function applyCam(){const s=cam.shake,sx=s?(Math.random()-.5)*s:0,sy=s?(Math.random()-.5)*s:0;
+  ctx.setTransform(DPR*cam.z,0,0,DPR*cam.z,DPR*(W/2-cx*cam.z+sx),DPR*(cam.Ay-H*cam.z+sy));}
+
+/* ---------- Fons: plaça amb llum de matí, tarda o vespre ---------- */
+const TOD={
+  mati:{sky:['#5d9ee0','#a9d1f0','#e8f1f4','#f1ead8'],glow:[.86,.06,'rgba(255,252,228,.6)'],light:.06,warm:['rgba(40,60,110,.10)','rgba(255,240,200,.08)'],night:0,tint:null},
+  tarda:{sky:['#4f7fb8','#9cc0de','#f0d9b5','#f6c98e'],glow:[.12,.1,'rgba(255,226,170,.65)'],light:0,warm:['rgba(255,190,120,.14)','rgba(40,40,90,.16)'],night:0,tint:null},
+  vespre:{sky:['#232a55','#5b4a7f','#c97a6a','#f0a868'],glow:[.22,.4,'rgba(255,160,90,.55)'],light:-.22,warm:['rgba(255,150,90,.12)','rgba(30,20,70,.25)'],night:1,tint:'rgba(45,25,80,.16)'},
+};
+function makeBg(){
+  const P=TOD[curTod];bgTod=curTod;
+  bg=document.createElement('canvas');bg.width=Math.round(W*BS);bg.height=Math.round(H*BS);
+  ctx=bg.getContext('2d');ctx.setTransform(BS,0,0,BS,0,0);
+  const r=rng(23),B=ground-H*.035;
+  let g=ctx.createLinearGradient(0,0,0,B);P.sky.forEach((c,i)=>g.addColorStop([0,.45,.8,1][i],c));
+  ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+  g=ctx.createRadialGradient(W*P.glow[0],H*P.glow[1],0,W*P.glow[0],H*P.glow[1],W*.95);g.addColorStop(0,P.glow[2]);g.addColorStop(1,'rgba(255,226,170,0)');ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+  if(P.night){ctx.fillStyle='rgba(255,255,255,.7)';for(let i=0;i<40;i++)dot(r()*W,r()*H*.25,r()*1.1+.3);}
+  ctx.fillStyle=P.night?'rgba(255,255,255,.08)':'rgba(255,255,255,.22)';
+  for(let i=0;i<5;i++){const x=r()*W,y=H*(.05+r()*.18),s=40+r()*70;for(let k=0;k<4;k++){ctx.beginPath();ctx.ellipse(x+k*s*.35,y+(k%2)*6,s*.45,s*.14,0,0,Math.PI*2);ctx.fill();}}
+  ctx.fillStyle=P.night?'#4b4870':'#b4bfd0';const tx=W*.8,tb=B-H*.5,tw=Math.max(26,W*.07);
+  ctx.fillRect(tx-tw/2,tb-H*.17,tw,H*.3);ctx.beginPath();ctx.moveTo(tx-tw*.62,tb-H*.17);ctx.lineTo(tx,tb-H*.27);ctx.lineTo(tx+tw*.62,tb-H*.17);ctx.fill();
+  for(let x=-10;x<W;x+=34+r()*30){const hh2=H*(.06+r()*.07);ctx.fillStyle=P.night?(r()<.5?'#3f3d63':'#47446c'):(r()<.5?'#c3c9d4':'#b8c0cc');ctx.fillRect(x,B-H*.5-hh2+H*.06,40+r()*40,hh2+H*.2);}
+  facade(-W*.02,W*.17,B-H*.66,B,{base:'#c79f74',light:-.12+P.light,seed:3,people:true,flag:true,night:P.night});
+  facade(W*.85,W*.17+2,B-H*.7,B,{base:'#c29870',light:-.28+P.light,seed:5,people:true,night:P.night});
+  facade(W*.15,W*.7,B-H*.6,B,{base:'#ddc199',light:.04+P.light,seed:9,arcade:true,people:true,main:true,flag:true,night:P.night});
+  if(P.night){ // fanals i garlandes de llum
+    ctx.strokeStyle='rgba(40,30,30,.6)';ctx.lineWidth=1;
+    for(let k=0;k<2;k++){const y0=B-H*(.3+k*.12);ctx.beginPath();ctx.moveTo(0,y0);ctx.quadraticCurveTo(W/2,y0+30,W,y0);ctx.stroke();
+      for(let i=0;i<=16;i++){const t=i/16,x=t*W,y=(1-t)*(1-t)*y0+2*t*(1-t)*(y0+30)+t*t*y0;
+        const gg=ctx.createRadialGradient(x,y+3,0,x,y+3,9);gg.addColorStop(0,'rgba(255,214,130,.9)');gg.addColorStop(1,'rgba(255,214,130,0)');ctx.fillStyle=gg;dot(x,y+3,9);}}
+  }
+  g=ctx.createLinearGradient(0,B,0,H);g.addColorStop(0,shade('#b99f7c',P.light));g.addColorStop(1,shade('#a3845f',P.light));ctx.fillStyle=g;ctx.fillRect(0,B,W,H-B);
+  ctx.save();ctx.beginPath();ctx.rect(0,B,W,H-B);ctx.clip();ctx.strokeStyle='rgba(60,40,20,.12)';ctx.lineWidth=1;
+  for(let k=1;k<14;k++){const y=B+(H-B)*Math.pow(k/14,1.7);seg(0,y,W,y);}
+  for(let k=-12;k<=12;k++)seg(cx,B-H*.25,cx+k*W*.18,H);ctx.restore();
+  g=ctx.createLinearGradient(0,B-2,0,B+H*.03);g.addColorStop(0,'rgba(40,25,15,.35)');g.addColorStop(1,'rgba(40,25,15,0)');ctx.fillStyle=g;ctx.fillRect(0,B-2,W,H*.03);
+  g=ctx.createLinearGradient(0,0,W,0);g.addColorStop(0,P.warm[0]);g.addColorStop(1,P.warm[1]);ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+  ctx=mainCtx;
+  if(STYLE==='real'){try{const t=document.createElement('canvas');t.width=bg.width;t.height=bg.height;const tc=t.getContext('2d');
+    if('filter' in tc){tc.filter=`blur(${(1.4*BS).toFixed(1)}px) saturate(.92)`;tc.drawImage(bg,0,0);bg=t;}}catch(e){}}
+}
+function facade(x0,w,top,B,o){
+  const r=rng(o.seed),base=shade(o.base,o.light);
+  ctx.fillStyle=base;ctx.fillRect(x0,top,w,B-top);
+  for(let i=0;i<w*(B-top)/90;i++){ctx.fillStyle=r()<.5?'rgba(0,0,0,.035)':'rgba(255,255,255,.05)';ctx.fillRect(x0+r()*w,top+r()*(B-top),3+r()*14,2+r()*4);}
+  ctx.strokeStyle='rgba(0,0,0,.05)';ctx.lineWidth=1;for(let y=top+14;y<B;y+=14)seg(x0,y,x0+w,y);
+  ctx.fillStyle=shade(o.base,o.light-.2);ctx.fillRect(x0-3,top-7,w+6,9);ctx.fillStyle=shade(o.base,o.light+.15);ctx.fillRect(x0-3,top+2,w+6,3);
+  if(o.main){const mx=x0+w/2,cr=Math.min(16,w*.05);ctx.fillStyle=base;ctx.beginPath();ctx.moveTo(mx-w*.2,top-6);ctx.quadraticCurveTo(mx,top-H*.1,mx+w*.2,top-6);ctx.fill();
+    ctx.fillStyle=o.night?'#ffe9b0':'#f4eee2';dot(mx,top-H*.035,cr);ctx.strokeStyle='#3a2a20';ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(mx,top-H*.035,cr,0,Math.PI*2);ctx.stroke();
+    seg(mx,top-H*.035,mx,top-H*.035-cr*.7);seg(mx,top-H*.035,mx+cr*.45,top-H*.035+2);}
+  const arcH=o.arcade?H*.13:0;
+  if(o.arcade){const n=5,aw=w/n;for(let i=0;i<n;i++){const ax=x0+i*aw+aw*.12,aw2=aw*.76,ay=B-arcH;
+      const g=ctx.createLinearGradient(0,ay,0,B);g.addColorStop(0,o.night?'#5a3a20':'#3a2a21');g.addColorStop(1,o.night?'#8a5a2a':'#5a4434');ctx.fillStyle=g;
+      ctx.beginPath();ctx.moveTo(ax,B);ctx.lineTo(ax,ay+aw2*.5);ctx.arc(ax+aw2/2,ay+aw2*.5,aw2/2,Math.PI,0);ctx.lineTo(ax+aw2,B);ctx.fill();
+      ctx.strokeStyle=shade(o.base,o.light-.15);ctx.lineWidth=2;ctx.beginPath();ctx.arc(ax+aw2/2,ay+aw2*.5,aw2/2+2,Math.PI,0);ctx.stroke();}
+    ctx.fillStyle=shade(o.base,o.light-.12);ctx.fillRect(x0,B-arcH-8,w,5);}
+  const rows=Math.floor((B-arcH-top-30)/56),cols=Math.max(1,Math.floor(w/44)),cw=w/cols;
+  const shutter=['#3f6b52','#2f5874','#5a4636','#6b3b2e'][o.seed%4];let flagDone=!o.flag;
+  for(let row=0;row<rows;row++){const wy=top+24+row*56;
+    for(let c=0;c<cols;c++){const wx=x0+c*cw+cw/2,ww=Math.min(18,cw*.42),wh=34;
+      const lit=o.night&&r()<.55;
+      ctx.fillStyle=lit?'#ffc96b':'#2d2420';ctx.fillRect(wx-ww/2,wy,ww,wh);ctx.fillStyle=lit?'rgba(255,240,200,.5)':'rgba(255,220,170,.18)';ctx.fillRect(wx-ww/2,wy,ww*.45,wh);
+      ctx.fillStyle=shade(shutter,o.light);ctx.fillRect(wx-ww/2-ww*.42,wy,ww*.38,wh);ctx.fillRect(wx+ww/2+ww*.04,wy,ww*.38,wh);
+      ctx.fillStyle='rgba(0,0,0,.18)';for(let k=1;k<6;k++){ctx.fillRect(wx-ww/2-ww*.42,wy+k*wh/6,ww*.38,1);ctx.fillRect(wx+ww/2+ww*.04,wy+k*wh/6,ww*.38,1);}
+      ctx.fillStyle=shade(o.base,o.light-.18);ctx.fillRect(wx-ww/2-4,wy-5,ww+8,4);
+      if(o.people&&r()<.45){const np=1+((r()*2)|0);for(let p=0;p<np;p++){const px=wx-ww*.25+p*ww*.5;
+        ctx.fillStyle=PUBLIC[(r()*PUBLIC.length)|0];ctx.fillRect(px-4.5,wy+wh-17,9,14);ctx.fillStyle=SKINS[(r()*SKINS.length)|0];dot(px,wy+wh-20,3.6);
+        ctx.fillStyle=HAIRS[(r()*HAIRS.length)|0];ctx.beginPath();ctx.arc(px,wy+wh-21,3.7,Math.PI,0);ctx.fill();}}
+      const by=wy+wh-10,bw=ww+16;ctx.fillStyle=shade(o.base,o.light-.25);ctx.fillRect(wx-bw/2,wy+wh,bw,4);
+      ctx.strokeStyle='#1e1a18';ctx.lineWidth=1.3;seg(wx-bw/2,by,wx+bw/2,by);for(let k=0;k<=6;k++)seg(wx-bw/2+k*bw/6,by,wx-bw/2+k*bw/6,wy+wh);
+      if(!flagDone&&row===0&&(c===1||c===cols-2)&&cols>2){flagDone=true;const fx=wx-11,fy=wy+wh+3;
+        ctx.fillStyle='#f6c315';ctx.fillRect(fx,fy,22,38);ctx.fillStyle='#d1201f';for(let s=0;s<4;s++)ctx.fillRect(fx+2.2+s*5,fy,2.6,38);
+        ctx.fillStyle='rgba(0,0,0,.12)';ctx.fillRect(fx+18,fy,4,38);}
+    }}
+}
+function makeVignette(){vign=document.createElement('canvas');vign.width=cv.width;vign.height=cv.height;
+  const c=vign.getContext('2d');c.setTransform(DPR,0,0,DPR,0,0);
+  const g=c.createRadialGradient(W/2,H*.48,Math.min(W,H)*.35,W/2,H*.5,Math.max(W,H)*.78);
+  g.addColorStop(0,'rgba(15,10,30,0)');g.addColorStop(1,'rgba(15,10,30,.42)');c.fillStyle=g;c.fillRect(0,0,W,H);}
+
+/* ---------- Castellers ---------- */
+function drawFigToon(x,y,f,o){
+  o=o||{};const hh=f.hh,w=fw*f.k,kid=f.role!=='tronc',v=vari(o.seed||0);
+  const base=o.col||shirt(),col=shade(base,v.tone),lw=Math.max(.7,w*.045),back=!!o.back;
+  const sh=y-hh,hip=y-hh*.42,r=w*.2,hy=sh-r*1.02;
+  ctx.lineJoin='round';ctx.lineCap='round';
+  const crouch=f.role==='acotxador';
+  for(const s of[-1,1]){const hx=x+s*w*.14,fx=x+s*w*.3,kx=crouch?x+s*w*.5:(hx+fx)/2+s*w*.02,ky=crouch?hip+(y-hip)*.3:(hip+y)/2;
+    limb([hx,hip,kx,ky,fx,y-w*.08],w*.25,s<0?'#f7f4ee':'#ddd6c9',lw);
+    ctx.strokeStyle='rgba(0,0,0,.08)';ctx.lineWidth=w*.08;seg(kx+s*w*.04,ky,fx+s*w*.03,y-w*.1);
+    ctx.fillStyle=v.skin;ctx.beginPath();ctx.ellipse(fx+s*w*.03,y-w*.035,w*.1,w*.055,0,0,Math.PI*2);ctx.fill();ctx.strokeStyle=OL;ctx.lineWidth=lw;ctx.stroke();}
+  const sp=fw*f.k*.92;
+  const arm=s=>{const ax=x+s*w*.32,ay=sh+w*.13;let ex,ey,mx,my,noHand=false;
+    if(o.aleta&&s>0){const a=Math.sin(T*12)*.3;ex=x+w*.45+Math.sin(a)*w*.3;ey=sh-hh*.62;mx=x+w*.55;my=sh-hh*.15;}
+    else if(o.reachX!=null){ex=x+s*w*.16+o.reachX;ey=sh-hh*.34;mx=(ax+ex)/2+s*w*.1;my=sh-hh*.02;}
+    else if(o.up){ex=x+s*w*.34;ey=sh-hh*.45;mx=x+s*w*.5;my=sh-hh*.1;}
+    else if(f.count>1&&((s<0&&o.l)||(s>0&&o.r))){ex=x+s*sp*.56;ey=sh+w*.2;mx=(ax+ex)/2;my=ay+w*.12;}
+    // al tronc tots s'agafen: el braç de fora també s'agafa (pel costat, cap enrere), no penja
+    else if(f.count>1&&(f.role==='tronc'||f.role==='dosos')){mx=x+s*w*.6;my=sh+w*.2;ex=x+s*w*.53;ey=sh+w*.3;noHand=true;}
+    else if(f.role==='tronc'&&f.count===1){ex=x+s*w*.3;ey=sh-hh*.2;mx=x+s*w*.52;my=sh+hh*.05;}
+    else if(crouch){ex=x+s*w*.62;ey=y+hh*.05;mx=x+s*w*.58;my=sh+hh*.4;}
+    else{ex=x+s*w*.5;ey=sh+hh*.42;mx=x+s*w*.5;my=sh+hh*.18;}
+    if(noHand){limb([ax,ay,mx,my],w*.19,col,lw);}else{limb([ax,ay,mx,my,ex,ey],w*.19,col,lw);hand(ex,ey,w*.085,v.skin,lw);}};
+  const tw=w*.8,ww=w*.66;
+  ctx.beginPath();ctx.moveTo(x-tw/2,sh+w*.14);ctx.quadraticCurveTo(x-tw/2,sh,x-tw/2+w*.14,sh);ctx.lineTo(x+tw/2-w*.14,sh);
+  ctx.quadraticCurveTo(x+tw/2,sh,x+tw/2,sh+w*.14);ctx.lineTo(x+ww/2,hip+w*.04);ctx.lineTo(x-ww/2,hip+w*.04);ctx.closePath();
+  ctx.fillStyle=col;ctx.fill();ctx.save();ctx.clip();
+  {const st=o.col?null:stripe();if(st){ctx.fillStyle=shade(st,v.tone*.5);const sw=w*.075;for(let xx=x-tw/2+sw;xx<x+tw/2;xx+=sw*2)ctx.fillRect(xx,sh-2,sw,hip-sh+w);}}
+  ctx.fillStyle=shade(base,-.24);ctx.fillRect(x+w*.12,sh,w,hip-sh+w);ctx.fillStyle=shade(base,.2);ctx.fillRect(x-tw/2,sh,w*.12,hip-sh);
+  ctx.fillStyle='rgba(0,0,0,.1)';ctx.fillRect(x-tw/2,hip-hh*.2,tw,hh*.08);
+  ctx.restore();ctx.strokeStyle=OL;ctx.lineWidth=lw;ctx.stroke();
+  if(!back){ctx.fillStyle=v.skin;ctx.beginPath();ctx.moveTo(x-w*.1,sh);ctx.lineTo(x+w*.1,sh);ctx.lineTo(x,sh+w*.15);ctx.closePath();ctx.fill();}
+  const fy=hip-hh*.14,fh=hh*.17;ctx.fillStyle='#19181b';rr(x-ww/2-w*.04,fy,ww+w*.08,fh,w*.05);ctx.fill();ctx.strokeStyle=OL;ctx.lineWidth=lw;ctx.stroke();
+  ctx.strokeStyle='rgba(255,255,255,.13)';ctx.lineWidth=Math.max(.6,lw*.8);seg(x-ww/2,fy+fh*.36,x+ww/2,fy+fh*.36);seg(x-ww/2,fy+fh*.7,x+ww/2,fy+fh*.7);
+  if(back){ctx.fillStyle='#19181b';ctx.beginPath();ctx.moveTo(x+ww*.3,fy+fh);ctx.lineTo(x+ww*.42,fy+fh+hh*.12);ctx.lineTo(x+ww*.2,fy+fh+hh*.1);ctx.closePath();ctx.fill();}
+  arm(-1);arm(1);
+  ctx.fillStyle=v.skin;ctx.fillRect(x-r*.38,sh-r*.4,r*.76,r*.5);ctx.beginPath();ctx.arc(x,hy,r,0,Math.PI*2);ctx.fill();ctx.strokeStyle=OL;ctx.lineWidth=lw;ctx.stroke();
+  dot(x-r*.98,hy+r*.12,r*.2);dot(x+r*.98,hy+r*.12,r*.2);
+  if(back){
+    if(kid){ctx.fillStyle='#f8f8f6';ctx.beginPath();ctx.arc(x,hy-r*.05,r*1.12,0,Math.PI*2);ctx.fill();ctx.strokeStyle=OL;ctx.lineWidth=lw;ctx.stroke();}
+    else{ctx.fillStyle=v.moc?'#c62f2a':v.hair;ctx.beginPath();ctx.arc(x,hy-r*.05,r*1.04,Math.PI*.9,Math.PI*.1,false);ctx.lineTo(x+r*.7,hy+r*.75);ctx.quadraticCurveTo(x,hy+r*.95,x-r*.7,hy+r*.75);ctx.closePath();ctx.fill();}
+    return;
+  }
+  ctx.fillStyle='#24170f';dot(x-r*.36,hy+r*.1,Math.max(.6,r*.1));dot(x+r*.36,hy+r*.1,Math.max(.6,r*.1));
+  if(o.aleta){ctx.strokeStyle='#5a2a1c';ctx.lineWidth=Math.max(.6,lw*.8);ctx.beginPath();ctx.arc(x,hy+r*.32,r*.3,.15*Math.PI,.85*Math.PI);ctx.stroke();}
+  if(kid){ctx.fillStyle='#f8f8f6';ctx.beginPath();ctx.arc(x,hy-r*.12,r*1.13,Math.PI*1.02,-Math.PI*.02);ctx.closePath();ctx.fill();ctx.strokeStyle=OL;ctx.lineWidth=lw;ctx.stroke();
+    ctx.fillStyle='#cfd5de';ctx.fillRect(x-r*1.1,hy-r*.2,r*2.2,r*.16);}
+  else if(v.moc){ctx.fillStyle='#c62f2a';ctx.beginPath();ctx.arc(x,hy-r*.1,r*1.06,Math.PI*1.05,-Math.PI*.05);ctx.closePath();ctx.fill();ctx.strokeStyle=OL;ctx.lineWidth=lw;ctx.stroke();
+    ctx.fillStyle='rgba(255,255,255,.55)';dot(x-r*.4,hy-r*.6,r*.1);dot(x+r*.2,hy-r*.75,r*.1);dot(x+r*.55,hy-r*.4,r*.1);}
+  else{ctx.fillStyle=v.hair;ctx.beginPath();
+    if(v.style===0)ctx.arc(x,hy-r*.1,r*1.04,Math.PI*1.08,-Math.PI*.08);
+    else if(v.style===1){ctx.arc(x,hy-r*.05,r*1.06,Math.PI*.92,Math.PI*.08,false);ctx.lineTo(x+r*.9,hy-r*.1);ctx.quadraticCurveTo(x,hy-r*.55,x-r*.9,hy-r*.1);}
+    else ctx.arc(x,hy-r*.15,r*1.02,Math.PI*1.15,-Math.PI*.15);
+    ctx.closePath();ctx.fill();}
+}
+function figXs(x,f){return f.off.map(o=>x+o*fw);}
+function gw(f){return(Math.max(...f.off)-Math.min(...f.off))*fw+fw*f.k*.72;}
+function drawFloor(x,y,f,o,i){figXs(x,f).forEach((xx,j)=>drawFig(xx,y,f,Object.assign({seed:(i||0)*10+j,l:j>0&&f.grp[j]===f.grp[j-1],r:j<f.count-1&&f.grp[j]===f.grp[j+1]},o||{})));}
+// bust de la pinya: de cara al castell (d'esquena a nosaltres) o públic de cara
+function drawBustToon(x,y,s,col,v,o){
+  const w=fw*s,r=w*.2,hy=y-r*1.02+(o.bow||0)*r,lw=Math.max(.7,w*.045),back=o.back;ctx.lineJoin='round';ctx.lineCap='round';
+  const armsT=()=>pinyaArm(x,y,s,col,v,o.reachTo[0],o.reachTo[1],o.arm);
+  if(o.reachTo&&!o.armsOver)armsT();
+  else if(o.armsUp!=null)for(const sg of[-1,1]){const ax=x+sg*w*.3,ay=y+w*.13,ex=x+sg*w*.14+o.armsUp*w*.34,ey=y-h*o.reach*s;
+    limb([ax,ay,x+sg*w*.4+o.armsUp*w*.12,y-h*o.reach*.35*s,ex,ey],w*.18,col,lw);hand(ex,ey,w*.08,v.skin,lw);}
+  const tw=w*.8;ctx.beginPath();ctx.moveTo(x-tw/2,H+20);ctx.lineTo(x-tw/2,y+w*.14);ctx.quadraticCurveTo(x-tw/2,y,x-tw/2+w*.14,y);
+  ctx.lineTo(x+tw/2-w*.14,y);ctx.quadraticCurveTo(x+tw/2,y,x+tw/2,y+w*.14);ctx.lineTo(x+tw/2,H+20);ctx.closePath();
+  ctx.fillStyle=col;ctx.fill();ctx.save();ctx.clip();if(o.colla&&stripe()){ctx.fillStyle=stripe();const sw=w*.075;for(let xx=x-tw/2+sw;xx<x+tw/2;xx+=sw*2)ctx.fillRect(xx,y-2,sw,H);}ctx.fillStyle='rgba(0,0,0,.2)';ctx.fillRect(x+w*.12,y,w,H);
+  if(o.colla){ctx.fillStyle='#19181b';ctx.fillRect(x-tw,y+h*.5*s,tw*2,h*.15*s);}ctx.restore();ctx.strokeStyle=OL;ctx.lineWidth=lw;ctx.stroke();
+  if(!back){ctx.fillStyle=v.skin;ctx.beginPath();ctx.moveTo(x-w*.1,y);ctx.lineTo(x+w*.1,y);ctx.lineTo(x,y+w*.14);ctx.closePath();ctx.fill();}
+  if(o.reachTo&&o.armsOver)armsT();
+  ctx.fillStyle=v.skin;ctx.beginPath();ctx.arc(x,hy,r,0,Math.PI*2);ctx.fill();ctx.strokeStyle=OL;ctx.stroke();
+  if(back){ctx.fillStyle=o.colla&&v.moc?'#c62f2a':v.hair;ctx.beginPath();ctx.arc(x,hy-r*.05,r*1.04,Math.PI*.9,Math.PI*.1,false);ctx.lineTo(x+r*.7,hy+r*.75);ctx.quadraticCurveTo(x,hy+r*.95,x-r*.7,hy+r*.75);ctx.closePath();ctx.fill();return;}
+  ctx.fillStyle='#24170f';dot(x-r*.36,hy+r*.1,Math.max(.5,r*.1));dot(x+r*.36,hy+r*.1,Math.max(.5,r*.1));
+  ctx.fillStyle=v.hair;ctx.beginPath();ctx.arc(x,hy-r*.1,r*1.04,Math.PI*1.08,-Math.PI*.08);ctx.closePath();ctx.fill();
+  if(o.gralla){ctx.strokeStyle='#5b3a1f';ctx.lineWidth=Math.max(1.5,w*.1);seg(x+r*.2,hy+r*.6,x+w*.75,hy-r*1.4);
+    ctx.fillStyle='#c9a24a';ctx.beginPath();ctx.arc(x+w*.78,hy-r*1.5,w*.1,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle=v.skin;dot(x+w*.35,hy+r*.1,w*.07);dot(x+w*.55,hy-r*.6,w*.07);}
+}
+function makePinya(F,c){
+  const col=shirt(),g0=gw(F[0]),r=rng(77+c.n*7+c.w),heads=[];
+  // la pinya és un cercle al voltant del tronc: vista des de la plaça és una el·lipse
+  const R=g0/2+fw*(2.6+c.req/70),kY=.4,dy=h*.19,dz=dy/kY,gap=fw*.7,y0=ground-h*.98;
+  const halfAt=z=>Math.sqrt(Math.max(0,R*R-z*z));
+  const zBack=-(R+dz*4),zFront=(H+h*.3-y0)/kY;
+  const mkLayer=(top,bot)=>{const lc=document.createElement('canvas');lc.width=Math.round(W*BS);lc.height=Math.round((bot-top)*BS);
+    ctx=lc.getContext('2d');ctx.setTransform(BS,0,0,BS,0,-top*BS);return lc;};
+  const backArms=[];
+  const row=(z,front)=>{
+    const y=y0+z*kY,s=clamp(1+z/(R*3.2),.62,1.35),sp=fw*s*.66,half=halfAt(z),m0=Math.ceil((W/2+sp*2)/sp),off=(Math.round(z/dz)%2)?sp*.5:0;
+    for(let m=-m0;m<=m0;m++){
+      const x=cx+m*sp+off+(r()-.5)*sp*.2,dx=Math.abs(x-cx),v=vari(5000+Math.round(z/dz)*101+m);
+      if(dx<=half){
+        const inner=Math.hypot(dx,z*1.4)<g0/2+fw*.9,dir=x<cx?1:-1;
+        // davant: braços cap amunt, cap al tronc. Darrere: la imatge especular, braços cap avall cap al centre de la rodona,
+        // dibuixats al final per sobre de tota la pinya del darrere, igual que al davant es veuen per sobre de les esquenes
+        const yy=y+(r()-.5)*h*.04;
+        // cap al centre de la rodona: el de davant és un pas més a prop del tronc
+        const ux=cx-x,uz=-z,um=Math.hypot(ux,uz)||1,st=dz*(1.05+.25*r()),lean=c.f?0:dir*(.1+.1*r())*(x===cx?0:1);
+        const arm={bend:inner?.1:.18+.12*r(),roll:false};
+        if(CELE){if(!c.f){r();r();} // mateixos sorteigs que la pinya normal, perquè ningú canviï de lloc
+          // tres fotogrames: a cada un salta un terç de la pinya
+          const grp=((m*5+Math.round(z/dz)*3)%3+3)%3,jy=grp===CELE_K?-h*s*.08:grp===(CELE_K+2)%3?-h*s*.03:0;
+          drawBust(x,yy+jy,s,shade(col,v.tone),v,{back:front,colla:true,armsUp:(Math.random()-.5)*.8,reach:.28+.16*Math.random()});}
+        else if(front){
+          // mans (tocant als baixos): braços amunt cap als segons. La resta: mans damunt l'esquena del de davant, colzes enfora
+          const rt=c.f?null:inner?[clamp((cx-x)*.4,-fw*s*1.1,fw*s*1.1),-h*s*(.42+.06*r())]:[ux/um*st*.5,uz/um*st*kY-h*s*(.04+.04*r())];
+          drawBust(x,yy,s,shade(col,v.tone),v,{back:true,colla:true,reachTo:rt,arm,lean,bow:c.f?0:.25+.2*r()});}
+        else if(!front){
+          // darrere: ens miren i aixequen els braços cap al castell; tots apunten a un mateix punt sobre el centre de la rodona,
+          // de manera que fan el mateix ventall que al davant. Els braços surten de les espatlles per darrere del cap.
+          drawBust(x,yy,s,shade(col,v.tone),v,{back:false,colla:true,lean,bow:c.f?0:.15+.2*r()});
+          // mirall exacte de la pinya del davant: mateix gest, mateixa llargada (la de la fila simètrica del davant),
+          // però cap avall, cap a la línia de la base del tronc
+          if(!c.f)backArms.push({x,y:yy,z,s,col:shade(col,v.tone),v,arm,lean,
+            dx:inner?clamp((cx-x)*.35,-fw*s,fw*s):ux/um*st*.5,dy:inner?-h*s*(.36+.06*r()):uz/um*st*kY+h*s*(.02+.03*r())});}
+      }else if(dx>half+gap&&r()<.8){
+        const gr=!front&&z<-R&&z>-R-dz*1.5&&x>cx+fw*2&&x<cx+fw*5;
+        const pc=PUBLIC[(r()*PUBLIC.length)|0],yy=y+(r()-.4)*h*.08;
+        const ex={back:front&&z>R*.25,gralla:gr,cap:r()<.15?pick(['#2d4a7a','#b8322b','#e6e1d6','#2f6a3c']):null,glasses:r()<.14,stripe:r()<.18,phone:!gr&&r()<.07};
+        drawBust(x+(r()-.5)*sp*.3,yy,s*.94,pc,v,ex);
+        if(!gr&&front&&z>R*.2&&z<R+dz*3&&yy<H-h*.6)heads.push({x,y:yy-fw*s*.4,s:Math.min(s,1.1)*.8});
+      }
+    }
+    // el públic queda més apagat i les files de darrere, més fosques
+    ctx.globalCompositeOperation='source-atop';
+    if(half>0){ctx.fillStyle='rgba(18,22,40,.08)';ctx.fillRect(0,0,cx-half-gap*.5,H*2);ctx.fillRect(cx+half+gap*.5,0,W,H*2);}else{ctx.fillStyle='rgba(18,22,40,.05)';ctx.fillRect(0,0,W,H*2);}
+    ctx.fillStyle=`rgba(28,16,8,${front?.06:.09})`;ctx.fillRect(0,0,W,H*2);
+    ctx.globalCompositeOperation='source-over';
+  };
+  // capa del darrere (es dibuixa abans del castell)
+  const bTop=y0+zBack*kY-h*1.4,back=mkLayer(bTop,ground+h*.1);
+  for(let z=zBack;z<-dz*.5;z+=dz)row(z,false);
+  // els braços de la pinya del darrere, per sobre de tots els cossos: de fora cap a dins, com al davant
+  backArms.sort((p,q)=>q.z-p.z).forEach(a=>{ctx.save();ctx.translate(a.x,a.y);ctx.transform(1,0,-a.lean,1,0,0);ctx.translate(-a.x,-a.y);pinyaArm(a.x,a.y,a.s,a.col,a.v,a.dx,a.dy,a.arm);ctx.restore();});
+  const backL={cv:back,top:bTop,hgt:ground+h*.1-bTop};
+  // capa del davant
+  const top=y0-h*1.4,lc=mkLayer(top,H);
+  const g=ctx.createRadialGradient(cx,ground,0,cx,ground,R*1.1);g.addColorStop(0,'rgba(30,18,8,.4)');g.addColorStop(1,'rgba(30,18,8,0)');ctx.fillStyle=g;ctx.fillRect(0,top,W,H-top);
+  for(let z=0;z<=zFront;z+=dz)row(z,true);
+  pinya={cv:lc,top,heads:heads.filter(()=>r()<.35),rings:[],back:backL};ctx=mainCtx;
+  // folre, manilles i puntals: pinyes més petites, rodones, damunt de la soca.
+  // folre: 3 cordons al voltant dels segons; manilles: 2 al voltant dels terços; puntals: 1 al voltant dels quarts.
+  const ringsOn=[c.f,c.m,c.p],NC=[3,2,1],kYr=.38,topL=ringsOn.lastIndexOf(true);
+  for(let L=0;L<3;L++){if(!ringsOn[L]||!F[L+1]||!F[L+2])continue;
+    const gl=gw(F[L+1]),y=F[L+1].y,rr0=gl/2+fw*.32,step=fw*.62,rmax=rr0+step*(NC[L]-1);
+    const pts=[];
+    for(let j=0;j<NC[L];j++){const rad=rr0+step*j,n=Math.max(6,Math.round(2*Math.PI*rad/(fw*.62)));
+      for(let i=0;i<n;i++){const th=(i+(j%2)*.5)/n*Math.PI*2,x=cx+Math.cos(th)*rad,z=Math.sin(th)*rad;pts.push({x,z,j,seed:900+L*97+j*31+i});}}
+    pts.sort((p1,p2)=>p1.z-p2.z);
+    const mk=(top,bot)=>{const rc=document.createElement('canvas');rc.width=Math.round(W*BS);rc.height=Math.round((bot-top)*BS);ctx=rc.getContext('2d');ctx.setTransform(BS,0,0,BS,0,-top*BS);return rc;};
+    const fig=(p,front)=>{const sc=clamp(1+p.z/(rmax*4),.8,1.15),fo={hh:h*.96*sc*(1-L*.03),k:(1-L*.05)*sc,role:'tronc',count:3},fy=y+p.z*kYr;
+      // estan dempeus damunt les espatlles de la pinya: es veuen sencers, cames incloses
+      ctx.fillStyle='rgba(30,18,10,.3)';ctx.beginPath();ctx.ellipse(p.x,fy-fw*.03,fw*.4*sc,fw*.09,0,0,Math.PI*2);ctx.fill();
+      const o=L===topL?{reachX:clamp((cx-p.x)*.45,-fw*1.2,fw*1.2)}:{up:p.j===0};
+      drawFig(p.x,fy,fo,Object.assign({seed:p.seed,back:front},CELE?{up:true}:o));};
+    const bt=y-rmax*kYr-h*1.6,bb=y+h*.3,bcv=mk(bt,bb);
+    pts.filter(p=>p.z<0).forEach(p=>fig(p,false));
+    ctx.globalCompositeOperation='source-atop';ctx.fillStyle='rgba(28,16,8,.16)';ctx.fillRect(0,bt,W,bb-bt);ctx.globalCompositeOperation='source-over';
+    const ft=y-h*1.6,fb=y+rmax*kYr+h*.3,fcv=mk(ft,fb);
+    pts.filter(p=>p.z>=0).forEach(p=>fig(p,true));
+    pinya.rings.push({L,cv:fcv,top:ft,hgt:fb-ft,back:{cv:bcv,top:bt,hgt:bb-bt}});ctx=mainCtx;}
+}
+function ringProg(L){
+  if(!att)return 1;const a=att;
+  if(a.phase==='fall')return a.A?0:clamp(((a.fallUp||1)-(L+2))/.6,0,1);
+  if(a.A&&(a.phase==='descent'||a.phase==='descentP'||a.phase==='celebra'))return 1;
+  return clamp((a.up-(L+2))/.6,0,1);
+}
+function drawRings(back){
+  for(const R of pinya.rings){const p=ringProg(R.L);if(p<=0)continue;const e=p*p*(3-2*p),G=back?R.back:R;
+    ctx.globalAlpha=clamp(e*1.3,0,1);ctx.drawImage(G.cv,0,G.top+(1-e)*h*.7,W,G.hgt);ctx.globalAlpha=1;}
+}
+/* ================= Estil gràfic: dibuix o realista ================= */
+let STYLE=(()=>{try{return localStorage.getItem('fem-pinya-estil')||'dibuix';}catch(e){return 'dibuix';}})();
+const SPR=new Map();
+function setStyle(s){STYLE=s;try{localStorage.setItem('fem-pinya-estil',s);}catch(e){}SPR.clear();bgTod=null;makeBg();
+  pinyaKeep=null;celeFrames=null;if(att){makePinya(att.F,att.c);}else makePinya(scene.F,scene.c);}
+function drawFigImpl(x,y,f,o){if(STYLE==='real')drawFigReal(x,y,f,o);else drawFigToon(x,y,f,o);}
+function drawFig(x,y,f,o){
+  o=o||{};
+  if(o.aleta||o.up||ctx!==mainCtx){drawFigImpl(x,y,f,o);return;}
+  const sd=(o.seed||0)%7,col=o.col||shirt();
+  const key=`${STYLE}|${f.role}|${f.k}|${f.hh.toFixed(1)}|${f.count>1?1:0}|${fw.toFixed(1)}|${sd}|${o.back?1:0}|${o.l?1:0}|${o.r?1:0}|${col}|${o.col?'':stripe()||''}`;
+  let sp=SPR.get(key);
+  if(!sp){const w=fw*f.k,padX=w*.95,top=f.hh+w*.75,bot=w*.15,sc=DPR*1.8;
+    const c=document.createElement('canvas');c.width=Math.ceil(2*padX*sc);c.height=Math.ceil((top+bot)*sc);
+    const old=ctx;ctx=c.getContext('2d');ctx.setTransform(sc,0,0,sc,padX*sc,top*sc);drawFigImpl(0,0,f,Object.assign({},o,{seed:sd}));ctx=old;
+    sp={c,x0:-padX,y0:-top,w:2*padX,h:top+bot};SPR.set(key,sp);}
+  ctx.drawImage(sp.c,x+sp.x0,y+sp.y0,sp.w,sp.h);
+}
+// braç de pinya: espatlla -> colze (doblegat cap enfora) -> mà damunt l'esquena o l'espatlla del de davant.
+// Contorn suau, i de vegades la màniga arremangada (avantbraç de color pell).
+function pinyaArm(x,y,s,col,v,dx,dy,o){
+  o=o||{};const w=fw*s,real=STYLE==='real';ctx.lineJoin='round';ctx.lineCap='round';
+  for(const sg of[-1,1]){
+    const ax=x+sg*w*.28,ay=y+w*.13,ex=x+sg*w*.15+dx,ey=y+dy,len=Math.hypot(ex-ax,ey-ay),b=o.bend==null?.3:o.bend;
+    const mx=(ax+ex)/2+sg*len*b*.45,my=(ay+ey)/2+len*b*.15,wid=w*(real?.13:.135);
+    const pts=[ax,ay,mx,my,ex,ey];
+    if(real){sleeve(o.roll?[ax,ay,mx,my]:pts,wid,col);
+      if(o.roll){ctx.beginPath();ctx.moveTo(mx,my);ctx.lineTo(ex,ey);ctx.strokeStyle=shade(v.skin,-.2);ctx.lineWidth=wid*.82;ctx.stroke();
+        ctx.strokeStyle=v.skin;ctx.lineWidth=wid*.66;ctx.stroke();}
+      handR(ex,ey,w*.065,v.skin);}
+    else{const ol=shade(col,-.5),lw=Math.max(.5,w*.03);
+      ctx.beginPath();ctx.moveTo(ax,ay);ctx.lineTo(mx,my);if(!o.roll)ctx.lineTo(ex,ey);ctx.strokeStyle=ol;ctx.lineWidth=wid+lw*2;ctx.stroke();ctx.strokeStyle=col;ctx.lineWidth=wid;ctx.stroke();
+      if(o.roll){ctx.beginPath();ctx.moveTo(mx,my);ctx.lineTo(ex,ey);ctx.strokeStyle=shade(v.skin,-.45);ctx.lineWidth=wid*.8+lw*2;ctx.stroke();ctx.strokeStyle=v.skin;ctx.lineWidth=wid*.8;ctx.stroke();}
+      ctx.fillStyle=v.skin;ctx.beginPath();ctx.arc(ex,ey,w*.065,0,Math.PI*2);ctx.fill();ctx.strokeStyle=shade(v.skin,-.45);ctx.lineWidth=lw;ctx.stroke();}
+  }
+}
+function bustArms(x,y,s,col,v,dx,dy,arch){
+  const w=fw*s,lw=Math.max(.7,w*.045);ctx.lineJoin='round';ctx.lineCap='round';
+  // el colze s'aixeca per sobre de l'espatlla: braços alçats que baixen cap al tronc per damunt dels caps del davant
+  for(const sg of[-1,1]){const ax=x+sg*w*.3,ay=y+w*.13,ex=x+sg*w*.17+dx,ey=y+dy,mx=(ax+ex)/2+sg*w*.08,my=(ay+ey)/2-w*.04;
+    if(STYLE==='real'){sleeve([ax,ay,mx,my,ex,ey],w*.13,col);handR(ex,ey,w*.065,v.skin);}
+    else{limb([ax,ay,mx,my,ex,ey],w*.14,col,lw);hand(ex,ey,w*.07,v.skin,lw);}}
+}
+function drawBust(x,y,s,col,v,o){
+  if(o&&o.lean){ctx.save();ctx.translate(x,y);ctx.transform(1,0,-o.lean,1,0,0);ctx.translate(-x,-y);}
+  if(STYLE==='real')drawBustReal(x,y,s,col,v,o);else drawBustToon(x,y,s,col,v,o);
+  if(o&&o.lean)ctx.restore();}
+function lg(x0,x1,st){const g=ctx.createLinearGradient(x0,0,x1,0);st.forEach((c,i)=>g.addColorStop(i/(st.length-1),c));return g;}
+function vg(y0,y1,st){const g=ctx.createLinearGradient(0,y0,0,y1);st.forEach((c,i)=>g.addColorStop(i/(st.length-1),c));return g;}
+function ell(x,y,rx,ry){ctx.beginPath();ctx.ellipse(x,y,Math.max(.1,rx),Math.max(.1,ry),0,0,Math.PI*2);ctx.fill();}
+function pl(pts){ctx.beginPath();ctx.moveTo(pts[0],pts[1]);for(let i=2;i<pts.length;i+=2)ctx.lineTo(pts[i],pts[i+1]);}
+function sleeve(pts,wd,base){
+  pl(pts);ctx.strokeStyle=shade(base,-.3);ctx.lineWidth=wd*1.1;ctx.stroke();
+  ctx.strokeStyle=base;ctx.lineWidth=wd*.94;ctx.stroke();
+  ctx.save();ctx.translate(-wd*.14,-wd*.08);pl(pts);ctx.strokeStyle='rgba(255,255,255,.16)';ctx.lineWidth=wd*.32;ctx.stroke();ctx.restore();
+}
+function handR(x,y,r,skin){const g=ctx.createRadialGradient(x-r*.3,y-r*.3,0,x,y,r*1.2);g.addColorStop(0,shade(skin,.12));g.addColorStop(1,shade(skin,-.22));ctx.fillStyle=g;ell(x,y,r,r*.9);}
+function headReal(x,hy,r,v,o){
+  const sk=v.skin;
+  if(!o.back){ctx.fillStyle=shade(sk,-.1);ell(x-r*.86,hy+r*.08,r*.16,r*.25);ell(x+r*.86,hy+r*.08,r*.16,r*.25);}
+  const g=ctx.createRadialGradient(x-r*.35,hy-r*.4,r*.05,x,hy,r*1.15);g.addColorStop(0,shade(sk,.14));g.addColorStop(.6,sk);g.addColorStop(1,shade(sk,-.25));
+  ctx.fillStyle=g;ell(x,hy,r*.84,r);
+  const hg=vg(hy-r,hy+r*.4,[shade(v.hair,.18),v.hair,shade(v.hair,-.25)]);
+  if(o.back){
+    if(o.kid){const hg2=ctx.createRadialGradient(x-r*.3,hy-r*.5,0,x,hy-r*.1,r*1.2);hg2.addColorStop(0,'#ffffff');hg2.addColorStop(1,'#c9ced6');ctx.fillStyle=hg2;ell(x,hy-r*.08,r*1.02,r*1.04);return;}
+    ctx.fillStyle=o.moc?'#c62f2a':hg;ctx.beginPath();ctx.ellipse(x,hy-r*.06,r*.9,r*1.02,0,Math.PI*.98,Math.PI*.02,false);
+    ctx.quadraticCurveTo(x+r*.6,hy+r*.75,x,hy+r*.82);ctx.quadraticCurveTo(x-r*.6,hy+r*.75,x-r*.9,hy);ctx.fill();
+    if(o.moc){ctx.fillStyle='rgba(255,255,255,.7)';for(let i=0;i<5;i++)ell(x-r*.5+i*r*.25,hy-r*.4+(i%2)*r*.3,r*.06,r*.06);}
+    else{ctx.strokeStyle='rgba(255,255,255,.12)';ctx.lineWidth=Math.max(.4,r*.05);for(let i=-2;i<=2;i++){ctx.beginPath();ctx.moveTo(x+i*r*.18,hy-r*.85);ctx.quadraticCurveTo(x+i*r*.26,hy-r*.1,x+i*r*.2,hy+r*.6);ctx.stroke();}}
+    return;
+  }
+  // cara
+  ctx.fillStyle='rgba(120,60,40,.10)';ell(x-r*.45,hy+r*.32,r*.2,r*.13);ell(x+r*.45,hy+r*.32,r*.2,r*.13);
+  ctx.lineCap='round';
+  ctx.strokeStyle=shade(v.hair,.05);ctx.lineWidth=Math.max(.5,r*.09);
+  ctx.beginPath();ctx.moveTo(x-r*.55,hy-r*.18);ctx.quadraticCurveTo(x-r*.35,hy-r*.28,x-r*.15,hy-r*.2);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(x+r*.15,hy-r*.2);ctx.quadraticCurveTo(x+r*.35,hy-r*.28,x+r*.55,hy-r*.18);ctx.stroke();
+  if(o.glasses){ctx.fillStyle='#1b1b1f';ell(x-r*.33,hy+r*.02,r*.24,r*.16);ell(x+r*.33,hy+r*.02,r*.24,r*.16);ctx.strokeStyle='#1b1b1f';ctx.lineWidth=Math.max(.5,r*.06);seg(x-r*.1,hy,x+r*.1,hy);}
+  else{ctx.fillStyle='#f4efe9';ell(x-r*.33,hy+r*.02,r*.14,r*.08);ell(x+r*.33,hy+r*.02,r*.14,r*.08);
+    ctx.fillStyle='#2b1d16';ell(x-r*.31,hy+r*.02,r*.075,r*.075);ell(x+r*.35,hy+r*.02,r*.075,r*.075);}
+  ctx.strokeStyle=shade(sk,-.28);ctx.lineWidth=Math.max(.4,r*.07);
+  ctx.beginPath();ctx.moveTo(x+r*.02,hy+r*.05);ctx.lineTo(x+r*.1,hy+r*.33);ctx.lineTo(x-r*.05,hy+r*.37);ctx.stroke();
+  ctx.strokeStyle=shade(sk,-.4);ctx.lineWidth=Math.max(.4,r*.08);
+  ctx.beginPath();if(o.smile){ctx.arc(x,hy+r*.42,r*.26,.2*Math.PI,.8*Math.PI);}else{ctx.moveTo(x-r*.2,hy+r*.58);ctx.quadraticCurveTo(x,hy+r*.63,x+r*.2,hy+r*.58);}ctx.stroke();
+  if(o.kid){const hg2=ctx.createRadialGradient(x-r*.35,hy-r*.75,0,x,hy-r*.3,r*1.25);hg2.addColorStop(0,'#ffffff');hg2.addColorStop(.7,'#e6e9ee');hg2.addColorStop(1,'#aab2bd');
+    ctx.fillStyle=hg2;ctx.beginPath();ctx.ellipse(x,hy-r*.2,r*1.02,r*.98,0,Math.PI*1.02,-Math.PI*.02);ctx.closePath();ctx.fill();
+    ctx.fillStyle='rgba(255,255,255,.8)';ell(x-r*.4,hy-r*.8,r*.22,r*.08);
+    ctx.strokeStyle='#2a2a2a';ctx.lineWidth=Math.max(.4,r*.06);ctx.beginPath();ctx.moveTo(x-r*.8,hy-r*.15);ctx.quadraticCurveTo(x-r*.7,hy+r*.6,x,hy+r*.95);ctx.stroke();return;}
+  if(o.moc){ctx.fillStyle='#c62f2a';ctx.beginPath();ctx.ellipse(x,hy-r*.25,r*.92,r*.85,0,Math.PI*1.04,-Math.PI*.04);ctx.closePath();ctx.fill();
+    ctx.fillStyle='rgba(255,255,255,.75)';for(let i=0;i<4;i++)ell(x-r*.45+i*r*.3,hy-r*.6+(i%2)*r*.2,r*.06,r*.06);return;}
+  if(o.cap){ctx.fillStyle=o.cap;ctx.beginPath();ctx.ellipse(x,hy-r*.35,r*.92,r*.75,0,Math.PI,0);ctx.closePath();ctx.fill();
+    ctx.fillStyle=shade(o.cap,-.3);ell(x+r*.1,hy-r*.38,r*1.05,r*.14);return;}
+  ctx.fillStyle=hg;ctx.beginPath();
+  if(v.style===0){ctx.ellipse(x,hy-r*.2,r*.9,r*.86,0,Math.PI*1.02,-Math.PI*.02);ctx.lineTo(x+r*.7,hy-r*.35);ctx.quadraticCurveTo(x+r*.2,hy-r*.55,x-r*.3,hy-r*.42);ctx.lineTo(x-r*.86,hy-r*.2);}
+  else if(v.style===1){ctx.ellipse(x,hy-r*.15,r*.95,r*.92,0,Math.PI*.95,Math.PI*.05,false);ctx.lineTo(x+r*.92,hy+r*.75);ctx.lineTo(x+r*.72,hy+r*.75);ctx.lineTo(x+r*.7,hy-r*.25);
+    ctx.quadraticCurveTo(x,hy-r*.6,x-r*.7,hy-r*.25);ctx.lineTo(x-r*.72,hy+r*.75);ctx.lineTo(x-r*.92,hy+r*.75);}
+  else{ctx.ellipse(x,hy-r*.3,r*.86,r*.72,0,Math.PI*1.1,-Math.PI*.1);ctx.quadraticCurveTo(x,hy-r*.7,x-r*.8,hy-r*.45);}
+  ctx.closePath();ctx.fill();
+  ctx.strokeStyle='rgba(255,255,255,.14)';ctx.lineWidth=Math.max(.4,r*.05);
+  for(let i=-2;i<=2;i++){ctx.beginPath();ctx.moveTo(x+i*r*.2,hy-r*.95);ctx.quadraticCurveTo(x+i*r*.3,hy-r*.7,x+i*r*.22,hy-r*.45);ctx.stroke();}
+}
+function drawFigReal(x,y,f,o){
+  o=o||{};const hh=f.hh,w=fw*f.k,kid=f.role!=='tronc',v=vari(o.seed||0),base=o.col||shirt(),col=shade(base,v.tone),back=!!o.back,crouch=f.role==='acotxador';
+  const sh=y-hh,hip=y-hh*.44,r=w*.17,neckH=w*.1,hy=sh-neckH-r*.85;
+  ctx.lineCap='round';ctx.lineJoin='round';
+  // cames: pantalons blancs i peus descalços
+  const pg=lg(x-w*.45,x+w*.45,['#fdfcf8','#ebe6db','#c4bcab']);
+  for(const s of[-1,1]){
+    const hx=x+s*w*.14,fx=x+s*w*.27,kx=crouch?x+s*w*.5:(hx+fx)/2+s*w*.025,ky=crouch?hip+(y-hip)*.3:(hip+y)/2;
+    ctx.strokeStyle=pg;ctx.lineWidth=w*.31;seg(hx,hip,kx,ky);ctx.lineWidth=w*.24;seg(kx,ky,fx,y-w*.11);
+    ctx.strokeStyle='rgba(80,70,50,.16)';ctx.lineWidth=Math.max(.4,w*.022);
+    ctx.beginPath();ctx.moveTo(kx-w*.09,ky-w*.05);ctx.quadraticCurveTo(kx,ky+w*.03,kx+w*.09,ky-w*.05);ctx.stroke();
+    seg(hx+s*w*.04,hip+w*.12,kx+s*w*.03,ky-w*.1);
+    ctx.strokeStyle='#e6e0d3';ctx.lineWidth=w*.25;seg(fx,y-w*.15,fx,y-w*.12);
+    const fg=ctx.createRadialGradient(fx+s*w*.02,y-w*.07,0,fx+s*w*.03,y-w*.04,w*.14);fg.addColorStop(0,shade(v.skin,.08));fg.addColorStop(1,shade(v.skin,-.25));
+    ctx.fillStyle=fg;ell(fx+s*w*.04,y-w*.045,w*.115,w*.06);
+  }
+  // cos
+  const tw=w*.88,ww=w*.66;
+  ctx.beginPath();ctx.moveTo(x-ww/2,hip+w*.04);ctx.lineTo(x-tw/2+w*.03,sh+w*.2);ctx.quadraticCurveTo(x-tw/2,sh+w*.02,x-tw/2+w*.17,sh);
+  ctx.lineTo(x+tw/2-w*.17,sh);ctx.quadraticCurveTo(x+tw/2,sh+w*.02,x+tw/2-w*.03,sh+w*.2);ctx.lineTo(x+ww/2,hip+w*.04);ctx.closePath();
+  ctx.fillStyle=lg(x-tw/2,x+tw/2,[shade(base,.22),col,col,shade(base,-.4)]);ctx.fill();
+  ctx.save();ctx.clip();
+  {const st=o.col?null:stripe();if(st){ctx.fillStyle=shade(st,v.tone*.5);const sw=w*.07;for(let xx=x-tw/2+sw;xx<x+tw/2;xx+=sw*2)ctx.fillRect(xx,sh-2,sw,hip-sh+w);
+    ctx.fillStyle=lg(x-tw/2,x+tw/2,['rgba(255,255,255,.12)','rgba(0,0,0,0)','rgba(0,0,0,0)','rgba(0,0,0,.35)']);ctx.fillRect(x-tw,sh-2,tw*2,hip-sh+w);}}
+  ctx.fillStyle=vg(sh,hip+w*.05,['rgba(255,255,255,.07)','rgba(0,0,0,0)','rgba(0,0,0,.2)']);ctx.fillRect(x-tw,sh,tw*2,hip-sh+w*.1);
+  ctx.strokeStyle='rgba(0,0,0,.14)';ctx.lineWidth=Math.max(.4,w*.022);
+  ctx.beginPath();ctx.moveTo(x-tw*.38,sh+w*.25);ctx.quadraticCurveTo(x-tw*.15,sh+w*.5,x-tw*.2,hip-w*.05);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(x+tw*.38,sh+w*.25);ctx.quadraticCurveTo(x+tw*.12,sh+w*.45,x+tw*.18,hip-w*.05);ctx.stroke();
+  if(back){ctx.strokeStyle=shade(base,-.25);ctx.beginPath();ctx.moveTo(x-tw*.45,sh+w*.16);ctx.quadraticCurveTo(x,sh+w*.24,x+tw*.45,sh+w*.16);ctx.stroke();seg(x,sh+w*.22,x,hip-w*.02);}
+  else{ctx.strokeStyle=shade(base,-.2);seg(x,sh+w*.12,x,hip-w*.02);ctx.fillStyle=shade(base,.3);for(let i=0;i<3;i++)ell(x+w*.025,sh+w*.22+i*(hip-sh)*.22,w*.018,w*.018);}
+  ctx.restore();
+  // coll de la camisa
+  if(!back){ctx.fillStyle=v.skin;ctx.beginPath();ctx.moveTo(x-w*.09,sh-w*.01);ctx.lineTo(x+w*.09,sh-w*.01);ctx.lineTo(x,sh+w*.13);ctx.closePath();ctx.fill();
+    ctx.fillStyle=shade(base,.12);ctx.beginPath();ctx.moveTo(x-w*.13,sh-w*.03);ctx.lineTo(x-w*.01,sh+w*.12);ctx.lineTo(x-w*.17,sh+w*.08);ctx.closePath();ctx.fill();
+    ctx.beginPath();ctx.moveTo(x+w*.13,sh-w*.03);ctx.lineTo(x+w*.01,sh+w*.12);ctx.lineTo(x+w*.17,sh+w*.08);ctx.closePath();ctx.fill();}
+  else{ctx.fillStyle=shade(base,-.08);ctx.beginPath();ctx.ellipse(x,sh+w*.01,w*.13,w*.05,0,0,Math.PI*2);ctx.fill();}
+  // faixa
+  const fy=hip-hh*.15,fh=hh*.18;
+  ctx.fillStyle=vg(fy,fy+fh,['#44444b','#17171b','#0a0a0c']);rr(x-ww/2-w*.05,fy,ww+w*.1,fh,w*.04);ctx.fill();
+  ctx.strokeStyle='rgba(255,255,255,.09)';ctx.lineWidth=Math.max(.4,w*.02);
+  for(let i=1;i<4;i++){ctx.beginPath();ctx.moveTo(x-ww/2-w*.03,fy+fh*i/4);ctx.quadraticCurveTo(x,fy+fh*i/4+w*.03*(i%2?1:-1),x+ww/2+w*.03,fy+fh*i/4);ctx.stroke();}
+  if(back){ctx.fillStyle='#121215';ctx.beginPath();ctx.moveTo(x+ww*.22,fy+fh*.6);ctx.lineTo(x+ww*.36,fy+fh+hh*.16);ctx.lineTo(x+ww*.12,fy+fh+hh*.13);ctx.closePath();ctx.fill();}
+  // ombra dels peus del pis de dalt sobre les espatlles
+  if(f.role==='tronc'||f.role==='dosos'){ctx.fillStyle='rgba(0,0,0,.18)';ell(x-w*.27,sh+w*.03,w*.12,w*.04);ell(x+w*.27,sh+w*.03,w*.12,w*.04);}
+  // braços
+  const sp=fw*f.k*.92;
+  for(const s of[-1,1]){const ax=x+s*w*.33,ay=sh+w*.12;let ex,ey,mx,my,noHand=false;
+    if(o.aleta&&s>0){const a=Math.sin(T*12)*.3;ex=x+w*.45+Math.sin(a)*w*.3;ey=sh-hh*.62;mx=x+w*.55;my=sh-hh*.15;}
+    else if(o.reachX!=null){ex=x+s*w*.16+o.reachX;ey=sh-hh*.34;mx=(ax+ex)/2+s*w*.1;my=sh-hh*.02;}
+    else if(o.up){ex=x+s*w*.34;ey=sh-hh*.45;mx=x+s*w*.5;my=sh-hh*.1;}
+    else if(f.count>1&&((s<0&&o.l)||(s>0&&o.r))){ex=x+s*sp*.56;ey=sh+w*.2;mx=(ax+ex)/2;my=ay+w*.12;}
+    // al tronc tots s'agafen: el braç de fora també s'agafa (pel costat, cap enrere), no penja
+    else if(f.count>1&&(f.role==='tronc'||f.role==='dosos')){mx=x+s*w*.6;my=sh+w*.2;ex=x+s*w*.53;ey=sh+w*.3;noHand=true;}
+    else if(f.role==='tronc'&&f.count===1){ex=x+s*w*.3;ey=sh-hh*.2;mx=x+s*w*.52;my=sh+hh*.05;}
+    else if(crouch){ex=x+s*w*.62;ey=y+hh*.05;mx=x+s*w*.58;my=sh+hh*.4;}
+    else{ex=x+s*w*.48;ey=sh+hh*.44;mx=x+s*w*.5;my=sh+hh*.2;}
+    if(noHand){sleeve([ax,ay,mx,my],w*.18,col);}else{sleeve([ax,ay,mx,my,ex,ey],w*.18,col);handR(ex,ey,w*.08,v.skin);}}
+  // coll i cap
+  ctx.fillStyle=vg(sh-neckH-r*.3,sh,[shade(v.skin,-.25),shade(v.skin,-.08)]);ctx.fillRect(x-w*.075,sh-neckH-r*.4,w*.15,neckH+r*.45);
+  headReal(x,hy,r,v,{back,kid,moc:v.moc&&!kid,smile:o.aleta});
+}
+function drawBustReal(x,y,s,col,v,o){
+  const w=fw*s,r=w*.2,hy=y-w*.1-r*.86+(o.bow||0)*r;ctx.lineCap='round';ctx.lineJoin='round';
+  const armsR=()=>pinyaArm(x,y,s,col,v,o.reachTo[0],o.reachTo[1],o.arm);
+  if(o.reachTo&&!o.armsOver)armsR();
+  else if(o.armsUp!=null)for(const sg of[-1,1]){const ex=x+sg*w*.14+o.armsUp*w*.34,ey=y-h*o.reach*s;
+    sleeve([x+sg*w*.3,y+w*.13,x+sg*w*.4+o.armsUp*w*.12,y-h*o.reach*.35*s,ex,ey],w*.17,col);handR(ex,ey,w*.075,v.skin);}
+  const tw=w*.84;
+  ctx.beginPath();ctx.moveTo(x-tw/2,H+20);ctx.lineTo(x-tw/2,y+w*.18);ctx.quadraticCurveTo(x-tw/2,y,x-tw/2+w*.18,y-w*.01);
+  ctx.lineTo(x+tw/2-w*.18,y-w*.01);ctx.quadraticCurveTo(x+tw/2,y,x+tw/2,y+w*.18);ctx.lineTo(x+tw/2,H+20);ctx.closePath();
+  ctx.fillStyle=lg(x-tw/2,x+tw/2,[shade(col,.16),col,shade(col,-.38)]);ctx.fill();
+  ctx.save();ctx.clip();
+  if(o.colla&&stripe()){ctx.fillStyle=stripe();const sw=w*.075;for(let xx=x-tw/2+sw;xx<x+tw/2;xx+=sw*2)ctx.fillRect(xx,y-2,sw,H);ctx.fillStyle=lg(x-tw/2,x+tw/2,['rgba(255,255,255,.1)','rgba(0,0,0,0)','rgba(0,0,0,.35)']);ctx.fillRect(x-tw,y-2,tw*2,H);}
+  if(o.stripe){ctx.fillStyle='rgba(255,255,255,.28)';for(let i=0;i<8;i++)ctx.fillRect(x-tw,y+w*.15+i*w*.16,tw*2,w*.06);}
+  if(o.colla){ctx.fillStyle=vg(y+h*.5*s,y+h*.66*s,['#3c3c42','#0c0c0e']);ctx.fillRect(x-tw,y+h*.5*s,tw*2,h*.16*s);}
+  if(o.back){ctx.strokeStyle=shade(col,-.25);ctx.lineWidth=Math.max(.4,w*.02);ctx.beginPath();ctx.moveTo(x-tw*.45,y+w*.14);ctx.quadraticCurveTo(x,y+w*.22,x+tw*.45,y+w*.14);ctx.stroke();}
+  ctx.restore();
+  if(!o.back){ctx.fillStyle=v.skin;ctx.beginPath();ctx.ellipse(x,y,w*.13,w*.08,0,0,Math.PI);ctx.fill();}
+  if(o.reachTo&&o.armsOver)armsR();
+  ctx.fillStyle=vg(hy+r*.5,y,[shade(v.skin,-.25),shade(v.skin,-.1)]);ctx.fillRect(x-w*.08,hy+r*.4,w*.16,y-hy-r*.35);
+  headReal(x,hy,r,v,{back:o.back,moc:o.colla&&v.moc,cap:o.cap,glasses:o.glasses});
+  if(o.phone){sleeve([x+w*.3,y+w*.12,x+w*.5,y-w*.2,x+w*.42,hy-r*.9],w*.15,col);ctx.fillStyle='#16161a';rr(x+w*.33,hy-r*1.6,w*.2,w*.32,w*.03);ctx.fill();
+    ctx.fillStyle='rgba(170,210,255,.85)';rr(x+w*.35,hy-r*1.56,w*.16,w*.25,w*.02);ctx.fill();handR(x+w*.42,hy-r*.95,w*.07,v.skin);}
+  if(o.gralla){ctx.strokeStyle='#5b3a1f';ctx.lineWidth=Math.max(1.5,w*.09);seg(x+r*.2,hy+r*.6,x+w*.75,hy-r*1.4);
+    ctx.fillStyle='#c9a24a';ell(x+w*.78,hy-r*1.5,w*.1,w*.1);handR(x+w*.35,hy+r*.1,w*.07,v.skin);handR(x+w*.55,hy-r*.6,w*.07,v.skin);}
+}
+
+function drawMocadors(){
+  for(const p of pinya.heads){const s=fw*p.s,t=T*9+p.x*.13,ax=p.x+Math.sin(t*.5)*s*.2,ay=p.y-s*.7;
+    ctx.strokeStyle='rgba(60,40,30,.8)';ctx.lineWidth=Math.max(1,s*.08);seg(p.x+s*.2,p.y,ax,ay);
+    ctx.fillStyle='#fbfbf7';ctx.beginPath();ctx.moveTo(ax,ay);ctx.quadraticCurveTo(ax+s*.3,ay-s*.25+Math.sin(t)*s*.15,ax+s*.55,ay-s*.05+Math.sin(t+1)*s*.2);
+    ctx.lineTo(ax+s*.5,ay+s*.35+Math.sin(t+2)*s*.15);ctx.quadraticCurveTo(ax+s*.2,ay+s*.25,ax,ay+s*.2);ctx.closePath();ctx.fill();}
+}
+
+/* ================= Motor d’un intent ================= */
+const BOT={on:false,kd:.25,lag:20,tf:.2,err:.8,e:0};
+function attemptParams(c,ctxType){
+  const E=effE(c,ctxType),cards=ctxType==='diada'?dCards():[];
+  const P={E,k:.9+2.6*E,noise:.5+2.2*E,thr:1,hold:.32,tF:1.25-.2*E,tPom:.95,tAleta:1.5,tDesc:.8,kick:.15+.45*E,tau:.12,damp:.7,slow:1};
+  if(c.pilar){P.k*=1.06;P.tF*=.85;}
+  if(GE.has(c.code)||INEDIT.has(c.code)){const pp=clamp(prepOf(c)+(ctxType==='diada'&&cl('assaig')?25*mul(cl('assaig')):0),0,100)/100,short=clamp((.8-pp)/.12,0,1);
+    P.hold*=1-.5*short;P.thr*=1-.15*short;}
+  if(vallsB()&&!c.f){P.thr*=1.15;P.hold*=1.3;}
+  const lv=id=>ctxType==='diada'?cl(id):0,m=id=>mul(lv(id));
+  if(lv('gralles'))P.noise*=1-red(.2,lv('gralles'));
+  if(lv('pinya'))P.k*=1-red(.15,lv('pinya'));
+  if(lv('cap'))P.thr*=1+.15*m('cap');
+  if(lv('enxaneta'))P.tPom*=1-red(.4,lv('enxaneta'));
+  if(lv('folre')&&c.f)P.k*=1-red(.25,lv('folre'));
+  if(lv('mans'))P.hold*=1+m('mans');
+  if(lv('canalla')){const r=red(.3,lv('canalla'),.6);P.tAleta*=1-r;P.tDesc*=1-r;}
+  if(lv('pilarfe')&&c.pilar){P.k*=1-red(.2,lv('pilarfe'));P.thr*=1+.1*m('pilarfe');}
+  if(lv('torre')&&c.w===2)P.k*=1-red(.15,lv('torre'));
+  if(lv('quatre')&&c.w===4)P.noise*=1-red(.2,lv('quatre'));
+  if(lv('agulla')&&c.a)P.k*=1-red(.25,lv('agulla'));
+  if(lv('persota')&&c.s)P.noise*=1-red(.3,lv('persota'));
+  if(lv('manilles')&&c.m)P.thr*=1+.2*m('manilles');
+  if(lv('baixos'))P.kick*=1-red(.4,lv('baixos'),.8);
+  if(lv('tronc')&&c.n<=7)P.noise*=1-red(.25,lv('tronc'));
+  if(lv('vent'))P.damp=.7+.5*m('vent');
+  if(lv('silenci'))P.slow=1-red(.15,lv('silenci'),.4);
+  return P;
+}
+function startAttempt(code,ctxType,onDone){
+  const c=CM[code],F=buildFloors(c);
+  setTod(ctxType==='diada'&&S.diada?CAL[S.diada.ev].tod:'tarda');
+  layout(F);const A=buildAgulla(c,F);layoutAgulla(A,F);makePinya(F,c);
+  const P=attemptParams(c,ctxType);
+  const ef=F[F.length-1];
+  if(ctxType==='diada'){stopMus('bg',800);stopMus('entrada',800);}
+  att={c,F,A,pu:A?A.length:0,dbl:ef.dbl||null,enxOff:ef.off[0],aletaOn:false,aDur:P.tAleta*(ef.dbl?1.9:1),dismounting:false,n:F.length,P,ctxType,onDone,phase:'ready',pt:0,up:1,x:0,v:0,B:0,Bt:0,L:0,out:0,nt:Math.random()*20,
+    ph:[Math.random()*6,Math.random()*6,Math.random()*6],kt:1.5+Math.random()*2,parts:[],carregat:false,touch:null,fallZ:1,hist:[],warnT:0,res:null};
+  $('#ui').classList.add('hidden');$('#play').classList.remove('hidden');$('#dismount').classList.remove('hidden');
+  $('#pName').textContent=c.name+(ctxType==='assaig'?' (assaig)':'');
+  $('#pPts').textContent=ctxType==='assaig'?'—':fmt(c.d);
+  setPhase(c.f?'La pinya i el folre estan fets':'La pinya està feta');
+  $('#hint').textContent=S.firstPlay?'Arrossega el dit cap on s’inclini el castell per posar-hi la pinya a sota':'Prepara’t…';
+  $('#hint').style.opacity=1;
+}
+function setPhase(t){$('#pPhase').textContent=tx(t);}
+function physics(dt){
+  const a=att,P=a.P,upE=a.phase==='descentP'?a.pu:a.up;
+  // als castells molt difícils, els primers pisos són més tranquils: la dificultat de veritat arriba a partir dels quints-sisens
+  const ramp=clamp((upE-3.5)/2.5,0,1),hard=clamp((P.E-.7)/.4,0,1),ease=1-hard*(1-ramp)*.6+hard*ramp*.1;
+  const hf=(.3+.7*Math.pow(clamp(upE/a.n,0,1),1.2))*ease,thr=a.thrNow=P.thr*(1+hard*(1-ramp)*.35);
+  a.nt+=dt;
+  const nz=P.noise*hf*(Math.sin(1.3*a.nt+a.ph[0])+.6*Math.sin(2.7*a.nt+a.ph[1])+.35*Math.sin(5.3*a.nt+a.ph[2]))/1.95;
+  a.kt-=dt;if(a.kt<=0){a.kt=1.8+Math.random()*2.6;a.v+=(Math.random()<.5?-1:1)*P.kick*hf*(.6+Math.random()*.8);}
+  if(BOT.on){BOT.e+=(Math.random()-.5)*BOT.err*dt*12;BOT.e*=.97;a.hist.push(a.x+BOT.kd*a.v+BOT.e);if(a.hist.length>BOT.lag){const tg=a.hist.shift();a.Bt+=(tg-a.Bt)*Math.min(1,dt/BOT.tf);}}
+  a.B+=(a.Bt-a.B)*Math.min(1,dt/P.tau);
+  const k=P.k*hf*(a.phase==='dismount'||a.dismounting?.7:1)*(a.phase==='descentP'?1.25:1);
+  a.L=a.x-a.B;
+  a.v+=(k*a.L+nz-P.damp*a.v)*dt;a.x+=a.v*dt;a.L=a.x-a.B;
+  if(Math.abs(a.L)>thr){a.out+=dt;a.warnT-=dt;if(a.warnT<=0){sfx.warn();a.warnT=.25;haptic(20);}}
+  else a.out=Math.max(0,a.out-dt*2);
+  if(a.out>P.hold)fall();
+}
+function floorTime(f){return f.role==='tronc'?att.P.tF:att.P.tPom;}
+function updateAttempt(dt){
+  const a=att;dt*=a.P.slow;a.pt+=dt;
+  switch(a.phase){
+    case 'ready':if(a.pt>(S.firstPlay?2.6:1.2)){a.phase='build';a.pt=0;$('#hint').style.opacity=S.firstPlay?1:0;if(a.ctxType==='diada')playMus('castells',true);}break;
+    case 'build':{
+      const j=Math.floor(a.up);a.up+=dt/floorTime(a.F[Math.min(j,a.n-1)]);
+      if(Math.floor(a.up)!==j&&a.up<a.n)sfx.up();
+      if(a.up>=a.n){a.up=a.n;a.phase='aleta';a.pt=0;$('#dismount').classList.add('hidden');
+        if(a.dbl){sfx.ding();setPhase('L’enxaneta fa la primera aleta');}
+        else{a.aletaDone=true;if(a.A){sfx.ding();}else{a.carregat=true;sfx.carregat();haptic([30,40,30]);}setPhase(a.c.w===9?'Les tres enxanetes fan l’aleta!':'L’enxaneta fa l’aleta!');}}
+      else setPhase(a.F[Math.floor(a.up)].up+(a.c.f&&Math.floor(a.up)===2?' i es fa el folre':a.c.m&&Math.floor(a.up)===3?' i es posen les manilles':a.c.p&&Math.floor(a.up)===4?' i es posen els puntals':''));
+      if(a.pt>4)$('#hint').style.opacity=0;
+      physics(dt);break;}
+    case 'aleta':{
+      physics(dt);if(a.phase!=='aleta')break;
+      const p=a.pt/a.aDur;
+      if(a.dbl){const A=a.dbl[0],B=a.dbl[1],q=clamp((p-.32)/.36,0,1),sm=q*q*(3-2*q);a.enxOff=A+(B-A)*sm;a.aletaOn=p<.28||p>.7;
+        if(p>.62&&!a.aletaDone){a.aletaDone=true;if(a.A){sfx.ding();setPhase('Segona aleta');}else{a.carregat=true;sfx.carregat();haptic([30,40,30]);setPhase('Segona aleta: castell carregat!');}}
+        else if(p>.3&&p<.62)setPhase('L’enxaneta passa a l’altre pom');}
+      else a.aletaOn=true;
+      if(a.pt>a.aDur){a.phase='descent';a.pt=0;a.aletaOn=false;}break;}
+    case 'descent':case 'dismount':{
+      const j=Math.ceil(a.up)-1;a.up-=dt/(a.F[Math.max(0,j)].role==='tronc'?a.P.tDesc:a.P.tDesc*(a.A&&j===a.n-1?1.6:.8));
+      if(a.A&&a.aletaDone&&!a.enxOnAg&&a.up<=a.n-1)a.enxOnAg=true;
+      if(a.up<=1){a.up=1;
+        if(a.A){a.dismounting=a.phase==='dismount';a.phase='descentP';a.pt=0;a.pu=a.enxOnAg?a.A.length:a.A.length-1;
+          if(!a.dismounting&&a.enxOnAg){a.carregat=true;a.aletaP=true;sfx.carregat();haptic([30,40,30]);setPhase(NOM().carregatAg);}
+          else setPhase(NOM().quedaAg);return;}
+        if(a.phase==='descent'){a.phase='celebra';a.pt=0;a.L*=.3;sfx.descarregat();setPhase('Castell descarregat!');startCele();}else finishAttempt('ID');return;}
+      setPhase(a.phase==='dismount'?'Desmuntant: '+a.F[Math.ceil(a.up)-1].down.toLowerCase():(a.A&&Math.ceil(a.up)-1===a.n-1)?NOM().passaAg:a.F[Math.ceil(a.up)-1].down);
+      physics(dt);break;}
+    case 'descentP':{
+      if(a.aletaP){if(a.pt>.35&&!a.agAletaOn){a.agAletaOn=true;sfx.ding();setPhase(NOM().aletaAg);}
+        if(a.pt>.35+a.P.tAleta*1.1){a.aletaP=false;a.agAletaOn=false;a.pt=.5;}physics(dt);break;}
+      if(a.pt<.5){physics(dt);break;}
+      a.pu-=dt/(a.P.tDesc*1.05);
+      if(a.pu<=1){a.pu=1;if(a.dismounting)finishAttempt('ID');else{a.phase='celebra';a.pt=0;a.L*=.3;sfx.descarregat();setPhase(NOM().fetAg);startCele();}return;}
+      setPhase(a.A[Math.ceil(a.pu)-1].down);physics(dt);break;}
+    case 'celebra':a.L*=.9;if(a.pt>2.8)finishAttempt('D');break;
+    case 'fall':
+      a.parts.forEach(p=>{if(p.rest)return;p.vy+=1100*dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.rot+=p.vr*dt;
+        if(p.y>p.ry){p.y=p.ry;if(p.vy>170){p.vy*=-.25;p.vx*=.5;p.vr*=.5;}else p.rest=true;}});
+      if(a.pt>2.2)finishAttempt(a.carregat?'C':'I');break;
+  }
+}
+function leanPx(){return att.L*fw*1.15;}
+function floorXAt(i,nuO){const a=att,nu=nuO||Math.max(1,a.up-1);return cx+leanPx()*Math.pow(clamp(i/nu,0,1.2),1.5)+Math.sin(T*23+i*1.7)*Math.min(3,Math.abs(a.L)*2.2)*(i/a.n);}
+function agullaVis(){
+  const a=att;if(!a.A||a.phase==='fall')return[];const out=[];
+  if(a.phase==='descentP'){const full=Math.floor(a.pu+1e-6),fr=a.pu-full,nu=Math.max(1,a.pu-1);
+    for(let j=1;j<a.A.length;j++){if(j<full)out.push({p:a.A[j],x:floorXAt(j,nu),al:1,dy:0});else if(j===full&&fr>.001)out.push({p:a.A[j],x:floorXAt(j,nu),al:fr,dy:(1-fr)*a.A[j].hh*.8});}
+    return out;}
+  const lim=a.phase==='ready'||a.phase==='build'?Math.floor(a.up+1e-6):99;
+  for(let j=1;j<a.A.length;j++){const q=a.A[j];if(q.top){if(a.enxOnAg)out.push({p:q,x:floorXAt(q.src),al:1,dy:0});continue;}
+    if(q.src<lim)out.push({p:q,x:floorXAt(q.src),al:1,dy:0});}
+  return out;
+}
+function fall(){
+  const a=att;a.fallZ=Math.max(1,cam.z*.82);const dir=Math.sign(a.L)||1,full=a.phase==='descentP'?1:Math.floor(a.up);a.parts=[];
+  const add=(f,x,i,seed)=>a.parts.push({x,y:f.y,f,seed,vx:dir*(40+i*28)*(.6+Math.random()*.8),vy:-(20+Math.random()*90),rot:0,
+    vr:dir*(1.5+Math.random()*3)*(.4+i/a.n),ry:ground-h*.85+Math.random()*h*.3,rest:false});
+  for(let i=1;i<full;i++){const f=a.F[i];figXs(floorXAt(i),f).forEach((x,j)=>add(f,x,i,i*10+j));}
+  agullaVis().forEach((v,j)=>add(v.p,v.x,v.p.src||j,700+j));
+  a.phase='fall';a.pt=0;$('#dismount').classList.add('hidden');
+  stopMus('castells');a.fallUp=a.up;a.up=1;a.pu=1;cam.shake=10;setPhase('S’ha fet llenya');sfx.crash();haptic([50,40,90]);
+}
+// pinya de celebració: tothom amb els braços amunt; es fa en el moment de descarregar
+function startCele(){const a=att;if(!a||pinyaKeep)return;pinyaKeep=pinya;celeFrames=[];CELE=true;
+  try{for(let k=0;k<3;k++){CELE_K=k;makePinya(a.F,a.c);pinya.heads=pinyaKeep.heads;celeFrames.push(pinya);}}finally{CELE=false;}}
+function endCele(){if(pinyaKeep){pinya=pinyaKeep;pinyaKeep=null;}celeFrames=null;}
+function finishAttempt(res){
+  endCele();
+  const a=att;att=null;
+  if(MUS.castells&&!MUS.castells.paused)fadeTo(MUS.castells,0,1800,()=>{MUS.castells.pause();playBg();});else setTimeout(playBg,600);
+  $('#play').classList.add('hidden');$('#ui').classList.remove('hidden');
+  if(S.firstPlay){S.firstPlay=false;persist();}
+  a.onDone(res,a.c);
+}
+/* ---------- entrada tàctil ---------- */
+const app=document.getElementById('app');
+app.addEventListener('pointerdown',e=>{if(!att||e.target.closest('button,#ui'))return;ensureAudio();e.preventDefault();att.touch={id:e.pointerId,x0:e.clientX,B0:att.Bt,x:e.clientX,y:e.clientY};});
+app.addEventListener('pointermove',e=>{if(!att||!att.touch||att.touch.id!==e.pointerId)return;att.touch.x=e.clientX;att.touch.y=e.clientY;att.Bt=att.touch.B0+(e.clientX-att.touch.x0)/70;});
+const endT=e=>{if(att&&att.touch&&att.touch.id===e.pointerId)att.touch=null;};
+app.addEventListener('pointerup',endT);app.addEventListener('pointercancel',endT);
+window.addEventListener('keydown',e=>{if(!att)return;if(e.code==='ArrowLeft')att.Bt-=.25;if(e.code==='ArrowRight')att.Bt+=.25;});
+$('#dismount').addEventListener('click',()=>{if(att&&(att.phase==='build'||att.phase==='ready')){att.phase='dismount';att.pt=0;$('#dismount').classList.add('hidden');$('#hint').style.opacity=0;}});
+
+/* ---------- dibuix ---------- */
+function draw(){
+  ctx.setTransform(DPR,0,0,DPR,0,0);ctx.fillStyle='#b99f7c';ctx.fillRect(0,0,W,H);
+  applyCam();ctx.drawImage(bg,0,0,W,H);
+  if(att&&att.phase==='celebra'&&celeFrames)pinya=celeFrames[Math.floor(att.pt*6.5)%3];
+  if(pinya&&pinya.back)ctx.drawImage(pinya.back.cv,0,pinya.back.top,W,pinya.back.hgt);
+  if(pinya&&pinya.rings)drawRings(true);
+  if(!att){const F=scene.F,n=F.length;for(let i=1;i<n;i++)drawFloor(cx+Math.sin(T*1.2)*fw*.05*(i+1)/n,F[i].y,F[i],{aleta:i===n-1},i);
+    ctx.drawImage(pinya.cv,0,pinya.top,W,H-pinya.top);drawRings();}
+  else{
+    const a=att,full=Math.floor(a.up+1e-6),frac=a.up-full;
+    // els que pugen (o baixen) ho fan per darrere del castell
+    const transfer=a.A&&a.phase==='descent'&&full===a.n-1&&frac>.001;
+    if(frac>.001&&full<a.n&&!transfer){const f=a.F[full],xs=figXs(floorXAt(full),f);
+      // tot el pis puja alhora (amb una diferència mínima entre ells)
+      xs.forEach((xx,j)=>{const lag=[0,.03,.015,.04,.01,.035,.02,.045,.025][j%9],e=clamp((frac-lag)/(1-.045),0,1),ee=1-Math.pow(1-e,2);
+        const yy=ground-h*.6+(f.y-(ground-h*.6))*ee;drawFig(xx+(1-ee)*fw*.25*(j%2?1:-1),yy,f,{seed:full*10+j,back:true,up:ee<.95});});}
+    agullaVis().forEach(v=>{ctx.globalAlpha=v.al;drawFig(v.x,v.p.y+v.dy,v.p,{seed:600+(v.p.src||0),aleta:!!(v.p.top&&a.agAletaOn)});ctx.globalAlpha=1;});
+    for(let i=1;i<Math.min(full,a.n);i++){let f=a.F[i];if(i===a.n-1&&a.dbl)f=Object.assign({},f,{off:[a.phase==='descent'?a.dbl[1]:a.enxOff]});
+      drawFloor(floorXAt(i),f.y,f,{aleta:i===a.n-1&&a.aletaOn},i);}
+    if(transfer){const f=a.F[a.n-1],q=a.A[a.A.length-1],e=1-frac,ee=e*e*(3-2*e),x0=floorXAt(a.n-1)+(a.dbl?a.dbl[1]:f.off[0])*fw,x1=floorXAt(q.src);
+      const y=f.y+(q.y-f.y)*ee-Math.sin(Math.PI*ee)*h*.25;drawFig(x0+(x1-x0)*ee,y,q,{seed:(a.n-1)*10,up:ee>.15&&ee<.85});}
+    ctx.drawImage(pinya.cv,0,pinya.top,W,H-pinya.top);drawRings();
+    if(a.phase==='aleta'||a.phase==='celebra')drawMocadors();
+    a.parts.forEach(p=>{ctx.save();ctx.translate(p.x,p.y-p.f.hh*.5);ctx.rotate(p.rot);drawFig(0,p.f.hh*.5,p.f,{seed:p.seed});ctx.restore();});
+  }
+  ctx.setTransform(DPR,0,0,DPR,0,0);
+  if(TOD[curTod].tint){ctx.fillStyle=TOD[curTod].tint;ctx.fillRect(0,0,W,H);}
+  ctx.drawImage(vign,0,0,W,H);
+  if(att&&att.phase!=='fall'&&att.phase!=='celebra')drawMeter();
+  if(att&&att.touch){ctx.strokeStyle='rgba(255,255,255,.55)';ctx.lineWidth=2;ctx.beginPath();ctx.arc(att.touch.x,att.touch.y,26,0,Math.PI*2);ctx.stroke();
+    ctx.fillStyle='rgba(255,255,255,.18)';dot(att.touch.x,att.touch.y,26);}
+}
+function drawMeter(){
+  const a=att,bw=Math.min(W*.82,360),bx=cx-bw/2,by=86,bh=12,R=1.7,z=(a.thrNow||a.P.thr)/R;
+  const danger=clamp((Math.abs(a.L)/(a.thrNow||a.P.thr)-.6)/.4,0,1);
+  ctx.save();rr(bx,by,bw,bh,6);ctx.clip();
+  ctx.fillStyle=`rgba(${180+60*danger},70,58,.9)`;ctx.fillRect(bx,by,bw,bh);
+  ctx.fillStyle='#d9a441';ctx.fillRect(cx-bw*.5*z*1.25,by,bw*z*1.25,bh);
+  ctx.fillStyle='#4fae6f';ctx.fillRect(cx-bw*.5*z,by,bw*z,bh);
+  ctx.fillStyle='#2f8a4f';ctx.fillRect(cx-bw*.5*z*.35,by,bw*z*.35,bh);
+  ctx.restore();ctx.strokeStyle='rgba(255,255,255,.5)';ctx.lineWidth=1;rr(bx,by,bw,bh,6);ctx.stroke();
+  const nx=cx+clamp(a.L/R,-1,1)*bw/2;
+  ctx.fillStyle='#fff';ctx.beginPath();ctx.moveTo(nx,by-1);ctx.lineTo(nx-7,by-10);ctx.lineTo(nx+7,by-10);ctx.closePath();ctx.fill();
+  ctx.strokeStyle='#fff';ctx.lineWidth=3;ctx.lineCap='round';seg(nx,by-1,nx,by+bh+3);
+  if(a.out>0){ctx.fillStyle=`rgba(239,107,87,${.15+.25*Math.sin(T*20)**2})`;ctx.fillRect(0,0,W,H);}
+}
+let last=0;
+function loop(ts){
+  const dt=Math.min(.05,(ts-last)/1000||0);last=ts;T+=dt;
+  if(att)updateAttempt(dt);
+  camTarget();const k=Math.min(1,dt*3.2);cam.z+=(cam.tz-cam.z)*k;cam.Ay+=(cam.tAy-cam.Ay)*k;cam.shake=Math.max(0,cam.shake-dt*18);
+  draw();requestAnimationFrame(loop);
+}
+
+/* ================= Interfície ================= */
+function toast(msg){const el=document.createElement('div');el.textContent=msg;$('#toast').appendChild(el);setTimeout(()=>el.remove(),3400);}
+function inkOn(hex){const n=parseInt(hex.slice(1),16),c=[n>>16,n>>8&255,n&255].map(v=>{v/=255;return v<=.03928?v/12.92:Math.pow((v+.055)/1.055,2.4);});
+  return .2126*c[0]+.7152*c[1]+.0722*c[2]>.22?'#141414':'#ffffff';}
+function ui(html,mode){const u=$('#ui');document.documentElement.style.setProperty('--colla',shirt());document.documentElement.style.setProperty('--colla-ink',inkOn(shirt()));u.className=mode||'';u.innerHTML=`<div class="sheet">${html}</div>`;u.scrollTop=0;}
+function go(v,a){view=v;R[v](a);}
+function rerender(v){const y=$('#ui').scrollTop;go(v);$('#ui').scrollTop=y;}
+function miniSVG(c,col){
+  const F=buildFloors(c);let y=82,out=`<ellipse cx="30" cy="90" rx="${Math.min(28,14+c.w*2.5)}" ry="6" fill="${col}" opacity=".35"/>`;
+  const u=c.w>=7?5.9:8.2;
+  F.forEach((f,i)=>{if(i===0)return;const r=f.role==='tronc'?(c.w>=7?2.6:3.5):f.role==='dosos'?(c.w>=7?2.3:3):f.role==='acotxador'?2.4:2.2;
+    f.off.forEach(o=>{out+=`<circle cx="${(30+o*u).toFixed(1)}" cy="${y.toFixed(1)}" r="${r}" fill="${col}"/>`;});
+    y-=f.role==='acotxador'?5.2:f.role==='dosos'?7.2:7.8;});
+  return `<svg viewBox="0 0 60 96" aria-hidden="true">${out}</svg>`;
+}
+function statusTag(c){const b=S.best[c.code];return b==='D'?'<span class="tag d">Descarregat</span>':b==='C'?'<span class="tag c">Carregat</span>':'';}
+function lockWhy(c){if(!prereqOk(c))return `Abans cal descarregar el ${CM[PRE[c.code]].name}`;if(avail()<c.req)return `Calen ${c.req} castellers (en tens ${avail()})`;return '';}
+function castRow(c,act,extra,blocked){
+  const lock=blocked||lockWhy(c),E=effE(c,act==='pickD'?'diada':'assaig'),rk=riskOf(E),p=prepOf(c);
+  return `<button class="it${lock?' lock':''}" ${lock?'disabled':''} data-act="${act}" data-code="${c.code}">
+    ${miniSVG(c,lock?'#8a93a6':shirt())}
+    <span class="mid"><span class="nm">${c.name}<small>${cd(c.code)}</small>${statusTag(c)}</span>
+    <span class="meta">${lock?esc(lock):`<span class="risk" style="background:${rk[1]}"></span>${rk[0]}, ${p<15?'sense assajar':`preparació ${Math.round(p)} %`}${c.table?'':', fora de taula'}`}</span>
+    ${extra||''}</span>
+    <span class="rt">${fmt(c.d)}<small>${fmt(c.c)} carregat</small></span></button>`;
+}
+function groupOf(c){return c.pilar?'Pilars':`Castells de ${c.n}`;}
+const RESN={D:'Descarregat',C:'Carregat',I:'S’ha fet llenya',ID:'Intent desmuntat'};
+const SUF={D:'',C:'(c)',I:'(i)',ID:'(id)'};
+
+// Gamma extra: tot el que va més enllà dels castells de 9 clàssics (3d9f i 4d9f), pilars de 8 i 9 inclosos.
+// Inèdits: els que encara no s'han fet mai (ni carregats). El 9d9f, el pd9fmp i el 2d9sm ja s'han fet i són gamma extra.
+const GE=new Set(['2d9fm','Pd8fm','7d9f','5d9f','4d9af','3d9af','4d9sf','2d8sf','3d10fm','4d10fm','9d9f','Pd9fmp','3d9sf','2d9sm']);
+const INEDIT=new Set(['Pd7sf','2d10fmp','4d10sm','3d10sm']);
+const GAM=[['g6','De 6'],['g7','De 7'],['g8','De 8'],['g9','De 9'],['extra','Extra'],['inedit','Inèdits'],['pilars','Pilars']];
+function needs80(c,p){return (GE.has(c.code)||INEDIT.has(c.code))&&p<80?`. ${INEDIT.has(c.code)?'Inèdit':'Gamma extra'}: sense un 80 % de preparació gairebé segur que cau`:'';}
+function gammaOf(c){return INEDIT.has(c.code)?'inedit':c.pilar?'pilars':GE.has(c.code)?'extra':'g'+Math.min(9,c.n);}
+function gamPick(key,list,pref){
+  tmp.gam=tmp.gam||{};const have=new Set(list.map(gammaOf));
+  let g=tmp.gam[key];
+  if(!g||!have.has(g)){const cand=GAM.map(x=>x[0]).filter(x=>have.has(x));g=(pref&&have.has(pref))?pref:(cand.filter(x=>x!=='pilars').pop()||cand[0]);tmp.gam[key]=g;}
+  return g;
+}
+function gamTabs(key,list,cur,countFn){
+  const have=GAM.filter(x=>list.some(c=>gammaOf(c)===x[0]));
+  if(have.length<2)return '';
+  return `<div class="tabs gam">${have.map(([g,l])=>{const n=countFn?countFn(g):0;
+    return `<button class="${g===cur?'on':''}" data-act="gam" data-k="${key}" data-g="${g}">${l}${n?` <b style="color:var(--gold)">${n}</b>`:''}</button>`;}).join('')}</div>`;
+}
+const R={
+home(){
+  setScene(S?bestCastell():CM['3d6']);
+  ui(`<div class="moc" aria-hidden="true"></div><h1 class="brand">Fem <i>pinya!</i></h1>
+   <p class="lead">Porta la teva colla de la gamma bàsica de 6 fins als castells de 10. Assaja, tria bé cada diada, juga les cartes i lluita al Concurs contra 40 colles.</p>
+   ${S?`<button class="btn main" data-act="hub">Continua amb ${esc(S.colla.name)}</button>`:''}
+   <button class="btn ghost" data-act="style">Estil gràfic: ${STYLE==='real'?'realista':'dibuix'} (toca per canviar)</button>
+   ${nomSeg()}
+   <button class="btn ghost" data-act="music">${musicOn()?'Música activada':'Música desactivada'} (toca per canviar)</button>
+   <button class="btn ${S?'alt':'main'}" data-act="create">${S?'Funda una colla nova':'Funda la teva colla'}</button>
+   <ul class="how" style="margin-top:16px">
+     <li><span>El castell puja sol. <b>Arrossega el dit</b> cap on s’inclini per posar-hi la pinya a sota i mantenir l’agulla a la zona verda.</span></li>
+     <li><span>Com més punts té el castell a la taula del Concurs 2026, més costa d’aguantar. <b>Assajar-lo</b> el fa més estable, i també millora els castells de la mateixa estructura.</span></li>
+     <li><span>Temporada de Sant Joan a Tots Sants, amb <b>diada cada cap de setmana</b>: 3 castells diferents i un pilar, i fins a 3 cartes.</span></li>
+     <li><span>Cada diada dona <b>bonus casteller</b> per gastar a la junta: sopars, assajos extra, cervesa gratis…</span></li>
+   </ul>
+   <p class="sub" style="margin-top:14px;font-size:12.5px">Joc de fans sense afany de lucre. No té cap relació oficial amb les colles castelleres, la Coordinadora de Colles Castelleres de Catalunya ni el Concurs de Castells. Els noms i colors de les colles s’usen només per identificar-les; les seves actuacions són simulades.</p>`);
+},
+create(){
+  tmp.color=tmp.color??0;tmp.name=tmp.name??'Castellers de ';tmp.real=tmp.real??true;tmp.as=tmp.as??-1;tmp.lvl=tmp.lvl??true;
+  ui(`<h2>Funda la colla</h2><p class="sub">${tmp.real&&tmp.as>=0&&tmp.lvl?'Comences amb els castells, la gent i la preparació que té la colla ara.':'Comences amb la gamma bàsica de 6 (3, 4 i 2 de 6) i el pilar de 4.'}</p>
+   <h3>Colles rivals</h3><div class="seg"><button class="${tmp.real?'on':''}" data-act="setReal" data-v="1"><b>Reals</b><span>Les 40 colles top, amb el seu nom i camisa</span></button>
+     <button class="${!tmp.real?'on':''}" data-act="setReal" data-v="0"><b>Inventades</b><span>40 colles de pobles imaginaris</span></button></div>
+   ${tmp.real?`<h3>La teva colla</h3><div class="seg"><button class="${tmp.as<0?'on':''}" data-act="setAs" data-v="-1"><b>Una colla nova</b><span>Tries nom i camisa</span></button>
+     <button class="${tmp.as>=0?'on':''}" data-act="setAs" data-v="${tmp.as>=0?tmp.as:1}"><b>Una colla real</b><span>Jugues amb una de les 40</span></button></div>
+     ${tmp.as>=0?`<select id="cAs" aria-label="Colla real">${REAL.map((r,i)=>`<option value="${i}" ${i===tmp.as?'selected':''}>${esc(r.name)}</option>`).join('')}</select>
+     ${VALLSN.has(REAL[tmp.as].name)?'<p class="note" style="color:var(--gold)">Colla fundadora del món casteller: necessiteu un 10 % menys de gent i els castells nets (sense folre) aguanten més abans de caure.</p>':''}
+     <div class="seg"><button class="${tmp.lvl?'on':''}" data-act="setLvl" data-v="1"><b>Amb el seu nivell</b><span>Castells, gent i preparació d’ara</span></button>
+     <button class="${!tmp.lvl?'on':''}" data-act="setLvl" data-v="0"><b>Des de zero</b><span>Gamma bàsica de 6 i 120 castellers</span></button></div>`:''}`:''}
+   <h3>Nomenclatura</h3>${nomSeg()}
+   ${tmp.real&&tmp.as>=0?'':`<h3>Nom</h3><input type="text" id="cName" maxlength="34" value="${esc(tmp.name)}" aria-label="Nom de la colla">
+   <h3>Color de la camisa</h3><div class="colors">${COLORS.map((c,i)=>`<button class="chip${i===tmp.color?' on':''}" data-act="pickColor" data-i="${i}" style="background:${c}" aria-label="Color ${i+1}"></button>`).join('')}</div>`}
+   ${S?'<p class="note">Fundar una colla nova esborra la partida actual.</p>':''}
+   <button class="btn main" data-act="found">Funda la colla</button><button class="btn ghost" data-act="home">Enrere</button>`);
+  const inp=$('#cName');if(inp)inp.addEventListener('input',()=>tmp.name=inp.value);
+  const sel=$('#cAs');if(sel)sel.addEventListener('change',()=>{tmp.as=+sel.value;makePinya(scene.F,scene.c);rerender('create');});
+},
+hub(){
+  if(S.ev>=CAL.length){go('seasonEnd');return;}
+  setScene(bestCastell());
+  const ev=CAL[S.ev],inj=injuredN();
+  const tabs=[['castells','Castells'],['cartes','Cartes'],['junta','Junta'],['ranking','Rànquing'],['calendari','Calendari']];
+  let next;
+  if(ev.vac)next=`<small>${ev.when}</small><b>${ev.name}</b><p class="sub">No hi ha assajos ni diada. La colla descansa, els lesionats es recuperen i la preparació baixa una mica.</p>
+    <button class="btn main" data-act="vacances">Passa la setmana</button>`;
+  else next=`<small>Propera diada, ${ev.when}</small><b>${evName(S.ev)}</b>
+     <p class="sub">${S.step==='assaig'?'Primer, la setmana d’assajos.':ev.concurs?'5 rondes; compten els 3 millors castells, amb un màxim de 2 carregats.':ev.big?'Gran diada: el bonus casteller val més.':'3 castells diferents i un pilar.'}</p>
+     <button class="btn main" data-act="${S.step==='assaig'?'assaig':'diada'}">${S.step==='assaig'?'Comença la setmana d’assajos':'Ves a la diada'}</button>`;
+  ui(`<div class="cname">${S.colla.real?cdot(myCol()):''}${esc(S.colla.name)}</div><div class="sub">Temporada ${S.season}, setmana ${S.ev+1} de ${CAL.length}</div>
+   ${vallsB()?'<div class="sub" style="color:var(--gold)">Colla fundadora del món casteller: necessiteu un 10 % menys de gent i els castells nets (sense folre) aguanten més abans de caure.</div>':''}
+   <div class="stats s4"><div class="stat"><b>${avail()}</b><span>de ${S.members} castellers</span></div>
+     <div class="stat"><b>${Math.round(S.moral)}%</b><span>moral</span></div>
+     <div class="stat"><b>${inj}</b><span>${inj===1?'lesionat':'lesionats'}</span></div>
+     <div class="stat"><b>${fmt(S.bonus)}</b><span>bonus</span></div></div>
+   <div class="next">${next}</div>
+   ${S.repte?`<div class="repte"><b>Repte acceptat:</b> ${esc(S.repte.text)}<br><span class="sub">Premi: ${rewardText(S.repte)}</span></div>`:''}
+   <div class="tabs">${tabs.map(t=>`<button class="${tab===t[0]?'on':''}" data-act="tab" data-t="${t[0]}">${t[1]}</button>`).join('')}</div>
+   <div id="tabc">${TABS[tab]()}</div>
+   <div class="row2" style="display:grid;grid-template-columns:1fr 1fr;gap:0 8px"><button class="btn ghost" data-act="style">Estil: ${STYLE==='real'?'realista':'dibuix'}</button><button class="btn ghost" data-act="sound">${S.sound!==false?'So activat':'So desactivat'}</button><button class="btn ghost" data-act="music">${musicOn()?'Música activada':'Música desactivada'}</button><button class="btn ghost" data-act="home">Menú</button></div>`);
+},
+assaig(){
+  if(!S.wk)newWeek();
+  const w=S.wk,used=Object.values(w.assign).reduce((a,b)=>a+b,0),free=w.slots-used;
+  const all=CAST.filter(c=>prereqOk(c)&&avail()>=c.req*.85).sort((a,b)=>b.d-a.d);
+  const pref=(all.filter(c=>!c.pilar&&(prepOf(c)>=20||S.best[c.code]==='D'))[0]||{}),gains=weekGains(),gcur=gamPick('assaig',all,pref.code?gammaOf(pref):null),list=all.filter(c=>gammaOf(c)===gcur);
+  const asg=Object.entries(w.assign).filter(([k,n])=>n>0);
+  ui(`<h2>Setmana d’assajos</h2><p class="sub">Abans de: ${evName(S.ev)}</p>
+   ${w.event?`<div class="note">${esc(w.event)}</div>`:''}
+   ${w.offer&&!S.repte?`<div class="repte"><b>Repte:</b> ${esc(w.offer.text)}<br><span class="sub">Premi: ${rewardText(w.offer)}. Si no el compleixes, la moral baixa.</span>
+     <div class="row2"><button class="btn main" data-act="repteOk">Accepta</button><button class="btn alt" data-act="repteNo">Rebutja</button></div></div>`:''}
+   <p>Tens <b>${w.slots}</b> assajos. Com més difícil és un castell, més assajos necessita. Assajar-lo també millora els de la mateixa estructura que estan per sota.</p>
+   <div class="slots">${Array.from({length:w.slots},(_,i)=>`<i class="${i<used?'on':''}"></i>`).join('')}</div>
+   ${asg.length?`<div class="chips">${asg.map(([k,n])=>`<span>${CM[k].name}${n>1?` ×${n}`:''}</span>`).join('')}</div>`:''}
+   ${gamTabs('assaig',all,gcur,g=>asg.filter(([k])=>gammaOf(CM[k])===g).reduce((a,[,n])=>a+n,0))}
+   <div class="list">${list.map(c=>{const n=w.assign[c.code]||0,p=prepOf(c),gain=gains[c.code]||0,anc=ancestors(c.code).filter(k=>CM[k]);
+     return `<div class="it" style="cursor:default">${miniSVG(c,shirt())}<span class="mid"><span class="nm">${c.name}<small>${cd(c.code)}</small>${statusTag(c)}</span>
+       <span class="meta">Preparació ${Math.round(p)} %${gain?` → ${Math.round(Math.min(100,p+gain))} %`:''}${needs80(c,p)}</span>
+       <span class="bar"><i class="add" style="width:${Math.min(100,p+gain)}%"></i><i style="width:${p}%"></i></span>
+       ${n&&anc.length?`<span class="also">També millora: ${anc.slice(0,2).map(k=>CM[k].name).join(', ')}</span>`:''}
+       ${n&&related(c.code).length?`<span class="also">I una mica: ${related(c.code).map(k=>CM[k].name).join(', ')}</span>`:''}
+       ${!w.prova?`<button class="btn ghost" style="text-align:left;padding:6px 0 0;margin:0;width:auto" data-act="prova" data-code="${c.code}">Fes-ne una prova</button>`:''}</span>
+       <span class="cnt"><button data-act="asg" data-code="${c.code}" data-d="-1" aria-label="Treu un assaig">−</button><b>${n}</b><button data-act="asg" data-code="${c.code}" data-d="1" ${free<=0?'disabled':''} aria-label="Afegeix un assaig">+</button></span></div>`;}).join('')}</div>
+   ${w.prova?'<p class="sub">Ja has fet la prova d’aquesta setmana.</p>':'<p class="sub">Un cop per setmana pots provar un castell a l’assaig: si surt bé, guanya molta preparació.</p>'}
+   <button class="btn main" data-act="closeWeek">${free>0?`Tanca la setmana (${free} sense fer)`:'Tanca la setmana'}</button>
+   <button class="btn ghost" data-act="hub">Torna a la seu</button>`,'full');
+},
+diadaCards(){
+  const ev=CAL[S.ev];tmp.cards=tmp.cards||[];
+  ui(`<h2>${evName(S.ev)}</h2><p class="sub">${ev.concurs?'5 rondes. Compten els 3 millors castells, amb un màxim de 2 carregats.':'3 castells diferents i un pilar. No es pot repetir un castell que ja s’ha fet.'}</p>
+   ${S.repte?`<div class="repte"><b>Repte:</b> ${esc(S.repte.text)}</div>`:''}
+   <h3>Tria fins a 3 cartes</h3>
+   <div class="cards">${S.cards.map(id=>{const c=CARDM[id];return `<button class="card${tmp.cards.includes(id)?' on':''}" data-act="tcard" data-id="${id}"><div class="ic">${c.ico}</div><b>${c.name}</b><span style="color:var(--gold)">Nivell ${lvOf(id)}</span><span>${cDesc(id)}</span></button>`;}).join('')}</div>
+   <button class="btn main" data-act="startDiada">Comença la diada</button>
+   <button class="btn alt" data-act="simDiada">Simula la diada</button>
+   <p class="sub center">Simular és ràpid, però el bonus casteller és un 40 % menor.</p>
+   <button class="btn ghost" data-act="hub">Torna a la seu</button>`,'full');
+},
+diada(){
+  const d=S.diada,ev=CAL[d.ev],nR=d.max,cur=d.rounds.length;
+  const rows=[];for(let i=0;i<nR;i++){const r=d.rounds[i],isP=!ev.concurs&&i===nR-1;
+    rows.push(`<div class="rd${i===cur?' cur':''}"><span class="n">${isP?'P':i+1}</span><span class="mid">${r?`<b>${CM[r.code].name}</b><br><span class="res-${r.res}">${RESN[r.res]}</span>`:`<span class="sub">${isP?'Pilar':'Ronda '+(i+1)}</span>`}</span>${r?`<b>${fmt(r.pts)}</b>`:''}</div>`);}
+  ui(`<h2>${evName(d.ev)}</h2>
+   ${d.cards.length?`<div class="chips">${d.cards.map(id=>`<span>${CARDM[id].name}</span>`).join('')}</div>`:''}
+   ${S.repte?`<div class="repte"><b>Repte:</b> ${esc(S.repte.text)}</div>`:''}
+   <div class="rounds">${rows.join('')}</div>
+   <div class="score">${fmt(diadaTotal(d))}<small>punts${ev.concurs?' (3 millors)':''}</small></div>
+   ${cur<nR?`<button class="btn main" data-act="pick">${!ev.concurs&&cur===nR-1?'Tria el pilar':`Ronda ${cur+1}: tria el castell`}</button>`:`<button class="btn main" data-act="endDiada">Acaba la diada</button>`}
+   ${d.secondFree?'<p class="sub">Segona oportunitat: aquesta ronda es pot repetir.</p>':''}`,'full');
+},
+pick(){
+  const d=S.diada,ev=CAL[d.ev],cur=d.rounds.length,isP=!ev.concurs&&cur===d.max-1;
+  const done=new Set(d.rounds.filter(r=>r.res==='D'||r.res==='C').map(r=>r.code));
+  const pool=CAST.filter(c=>(isP?c.pilar:(ev.concurs?c.table:!c.pilar))).sort((a,b)=>b.d-a.d);
+  const okAll=pool.filter(c=>!lockWhy(c)&&!done.has(c.code));
+  const pref=okAll.find(c=>effE(c,'diada')<.8),gcur=isP?null:gamPick('pick',okAll.length?okAll:pool,pref?gammaOf(pref):null),inG=c=>isP||gammaOf(c)===gcur;
+  const ok=okAll.filter(inG),dn=pool.filter(c=>done.has(c.code)&&inG(c)),next=pool.filter(c=>lockWhy(c)&&prereqOk(c)&&inG(c)).reverse().slice(0,4);
+  ui(`<h2>${isP?'Tria el pilar':`Ronda ${cur+1}: tria el castell`}</h2>
+   <p class="sub">El color indica el risc segons la dificultat, la preparació i la gent.</p>
+   ${isP?'':gamTabs('pick',okAll.length?okAll:pool,gcur)}
+   <div class="list">${ok.map(c=>castRow(c,'pickD')).join('')||'<p class="note">No tens cap castell disponible en aquesta gamma.</p>'}</div>
+   ${dn.length?`<div class="grp">Ja fets avui</div><div class="list">${dn.map(c=>castRow(c,'pickD','','Ja l’has fet en aquesta diada')).join('')}</div>`:''}
+   ${next.length?`<div class="grp">Encara no hi arribes</div><div class="list">${next.map(c=>castRow(c,'pickD')).join('')}</div>`:''}
+   <button class="btn ghost" data-act="diada">Enrere</button>`,'full');
+},
+result(o){
+  const{res,c,pts,chips,unl}=o;
+  ui(`<div class="center">${miniSVG(c,res==='I'?'#8a93a6':shirt()).replace('<svg','<svg style="width:52px;height:84px"')}
+   <div class="sub">${c.name}${o.assaig?' (assaig)':''}</div><div class="big">${RESN[res]}</div>
+   ${o.assaig?'':`<div class="score">${fmt(pts)}<small>punts</small></div>`}
+   <div class="chips" style="justify-content:center">${chips.join('')}</div>
+   ${unl.map(u=>`<p class="note">${u}</p>`).join('')}</div>
+   <button class="btn main" data-act="${o.assaig?'assaig':'diada'}">Continua</button>`,'low');
+},
+summary(o){
+  ui(`<div class="sub">${esc(o.evName)}</div><div class="big">${o.title}</div>
+   <div class="score">${fmt(o.pts)}<small>punts</small></div>
+   <div class="chips">${o.chips.join('')}</div>
+   ${o.notes.map(n=>`<p class="note">${n}</p>`).join('')}
+   ${o.table?`<h3>${o.tableTitle}</h3><table>${o.table}</table>`:''}
+   <button class="btn main" data-act="${o.seasonEnd?'seasonEnd':'hub'}">${o.seasonEnd?'Tanca la temporada':'Torna a la seu'}</button>`,'full');
+},
+seasonEnd(){
+  const rk=seasonRank(),pos=rk.findIndex(r=>r.me)+1;
+  ui(`<div class="sub">Temporada ${S.season}</div><div class="big">Temporada tancada</div>
+   <div class="chips"><span>Millor diada: ${fmt(S.seasonBest)} punts</span><span>${pos}a al rànquing</span>${S.concurs?`<span>${S.concurs.pos}a al Concurs (${S.concurs.jornada})</span>`:''}</div>
+   <h3>Rànquing final</h3>${rankTable(rk)}
+   <p class="note">A la nova temporada una part de la gent plega, la preparació baixa i les colles rivals arriben més fortes.</p>
+   <button class="btn main" data-act="newSeason">Comença la temporada ${S.season+1}</button>`,'full');
+},
+};
+function rankTable(rk,limit){
+  const me=rk.findIndex(r=>r.me);
+  return `<table>${rk.map((r,i)=>(!limit||i<limit||Math.abs(i-me)<=1)?`<tr class="${r.me?'me':''}"><td>${i+1}</td><td>${cdot(r.me?myCol():colOf(r.name))}${esc(r.name)}</td><td class="r">${fmt(r.pts)}</td></tr>`:(i===limit?'<tr><td></td><td class="sub">…</td><td></td></tr>':'')).join('')}</table>`;
+}
+function nomSeg(){const V=VALL();return `<div class="seg"><button class="${V?'on':''}" data-act="setNom" data-v="vallenca"><b>Vallenca</b><span>2 de 8, 4 de 8 amb pilar, anxaneta</span></button>
+  <button class="${!V?'on':''}" data-act="setNom" data-v="vilafranquina"><b>Vilafranquina</b><span>Torre de 8, 4 de 8 amb l’agulla, enxaneta</span></button></div>`;}
+function setNom(v){NOMK=v==='vilafranquina'?'vilafranquina':'vallenca';try{localStorage.setItem('fem-pinya-nom',NOMK);}catch(e){}applyNom();}
+const TABS={
+castells(){
+  const vis=CAST.filter(c=>c.table||prereqOk(c)),gcur=gamPick('cart',vis,'g6'),list=vis.filter(c=>gammaOf(c)===gcur);
+  return `<p class="sub">Punts de la taula del Concurs de Castells 2026. Els marcats «fora de taula» només compten durant la temporada.</p>
+   ${gamTabs('cart',vis,gcur)}<div class="list">${list.map(c=>{const lock=lockWhy(c),p=prepOf(c);
+    return `<div class="it${!prereqOk(c)?' lock':''}" style="cursor:default">${miniSVG(c,prereqOk(c)?shirt():'#8a93a6')}<span class="mid"><span class="nm">${c.name}<small>${cd(c.code)}</small>${statusTag(c)}</span>
+     <span class="meta">${lock?esc(lock):`Preparació ${Math.round(p)} %, ${c.req} castellers${needs80(c,p)}`}</span>${prereqOk(c)?`<span class="bar"><i style="width:${p}%"></i></span>`:''}</span>
+     <span class="rt">${fmt(c.d)}<small>${fmt(c.c)} c.</small></span></div>`;}).join('')}</div>`;
+},
+cartes(){
+  const own=CARDS.filter(c=>S.cards.includes(c.id)),rest=CARDS.filter(c=>!S.cards.includes(c.id));
+  const stars=L=>'★'.repeat(L)+`<i style="opacity:.3;font-style:normal">${'★'.repeat(LVMAX-L)}</i>`;
+  return `<p class="sub">Tens ${own.length} de ${CARDS.length} cartes. A cada diada en pots portar 3. Les noves surten de fites i reptes; amb sobres de la junta n’aconsegueixes còpies per pujar-les de nivell (2, 4, 8 i 16 còpies).</p>
+   <div class="cards" style="margin-top:8px">${own.map(c=>{const L=lvOf(c.id),cp=(S.cardLv[c.id]||{cp:0}).cp,need=LVNEED[L]||0,can=L<LVMAX&&cp>=need;
+     return `<div class="card" style="cursor:default"><div class="ic">${c.ico}</div><b>${c.name}</b><span style="color:var(--gold);letter-spacing:1px">${stars(L)} <small style="letter-spacing:0">nivell ${L}</small></span><span>${c.d(L)}</span>
+       ${L<LVMAX?`<span>${cp} de ${need} còpies</span><span class="bar"><i style="width:${Math.min(100,cp/need*100)}%;background:var(--gold)"></i></span>
+       ${can?`<button class="btn main" style="padding:8px;font-size:13.5px" data-act="lvup" data-id="${c.id}">Puja al nivell ${L+1}</button>`:''}`:'<span>Nivell màxim</span>'}</div>`;}).join('')}
+   ${rest.map(c=>`<div class="card lock" style="cursor:default"><div class="ic">🔒</div><b>${c.name}</b><span>${c.fite?'Fita: '+c.fite:'Premi d’un repte'}</span></div>`).join('')}</div>`;
+},
+junta(){
+  return `<p class="sub">Tens <b>${fmt(S.bonus)}</b> punts de bonus casteller. Gasta’ls en activitats que fan venir gent i pugen la moral.</p>
+   <div class="shop">${SHOP.map(it=>`<button class="it" data-act="buy" data-id="${it.id}" ${S.bonus<it.cost?'disabled style="opacity:.45"':''}>
+     <span class="mid"><span class="nm">${it.name}</span><span class="meta">${it.desc}</span></span>
+     <span class="rt">${it.cost}<small>bonus</small></span></button>`).join('')}</div>`;
+},
+ranking(){
+  const rk=seasonRank();
+  return `<p class="sub">Millor actuació de cada colla aquesta temporada (${rk.length} colles).${S.real?' Colles reals amb el seu color de camisa; les seves actuacions són simulades.':''}</p>${rankTable(rk)}
+   ${S.concurs?`<h3>Concurs d’aquesta temporada</h3><p>Has quedat <b>${S.concurs.pos}a</b> a la jornada de ${S.concurs.jornada}, amb ${fmt(S.concurs.pts)} punts.</p>`:''}`;
+},
+calendari(){
+  return `<div class="list" style="margin-top:4px">${CAL.map((e,i)=>{const r=S.results.find(x=>x.ev===i);
+   return `<div class="rd${i===S.ev?' cur':''}"><span class="n">${i+1}</span><span class="mid"><b>${e.vac?e.name:evName(i)}</b><br><span class="sub">${e.when}${r?': '+cdList(r.list):''}</span></span>${r?`<b>${fmt(r.pts)}</b>`:''}</div>`;}).join('')}</div>`;
+},
+};
+
+/* ================= Lògica de temporada ================= */
+function bestCastell(){if(!S)return CM['3d6'];let b=CM['3d6'];CAST.forEach(c=>{if(S.best[c.code]==='D'&&!c.pilar&&c.d>b.d)b=c;});return b;}
+function prepGain(c,n){let g=0;for(let i=0;i<n;i++)g+=Math.max(4,30-24*c.diff)*Math.pow(.65,i);return g;}
+function satGain(p,g){return g*(1-.55*p/100);}
+function rings(c){return (c.f?1:0)+(c.m?1:0)+(c.p?1:0);}
+function related(code){const c=CM[code];return CAST.filter(x=>x.w===c.w&&x.n===c.n+1&&rings(x)>rings(c)&&x.a===c.a&&x.s===c.s).map(x=>x.code);}
+function trainCastell(code,g){
+  S.prep[code]=Math.min(100,prepOf(CM[code])+satGain(prepOf(CM[code]),g));
+  ancestors(code).forEach((a,i)=>{S.prep[a]=Math.min(100,prepOf(CM[a])+satGain(prepOf(CM[a]),g*[1.25,1,.8,.65,.5][Math.min(i,4)]));});
+  related(code).forEach(x=>{S.prep[x]=Math.min(100,prepOf(CM[x])+satGain(prepOf(CM[x]),g*.3));});
+}
+function weekGains(){
+  const out={},w=S.wk;
+  Object.entries(w.assign).forEach(([code,n])=>{if(!n)return;const g=prepGain(CM[code],n);out[code]=(out[code]||0)+satGain(prepOf(CM[code]),g);
+    ancestors(code).forEach((a,i)=>{out[a]=(out[a]||0)+satGain(prepOf(CM[a]),g*[1.25,1,.8,.65,.5][Math.min(i,4)]);});
+    related(code).forEach(x=>{out[x]=(out[x]||0)+satGain(prepOf(CM[x]),g*.3);});});
+  return out;
+}
+function maxN(){let n=6;CAST.forEach(c=>{if(!c.pilar&&(S.best[c.code]==='D'||S.best[c.code]==='C'))n=Math.max(n,c.n);});return n;}
+function makeOffer(){
+  const nearR=S.rivals.map((r,i)=>({i,pts:r.best})).filter(x=>x.pts>0).sort((a,b)=>Math.abs(a.pts-S.seasonBest)-Math.abs(b.pts-S.seasonBest))[0];
+  const nextP=PIL.find(p=>S.best[p.code]!=='D'&&prereqOk(p));
+  const opts=[
+    {id:'tv',text:'La televisió emetrà la vostra diada: descarregueu els 3 castells.'},
+    {id:'subv',n:Math.min(10,maxN()+1),text:`L’Ajuntament us dona una subvenció si feu un castell de ${Math.min(10,maxN()+1)}, carregat o descarregat.`},
+    {id:'net',text:'Diada neta: que no caigui cap castell, ni en intent.'},
+    {id:'estrena',text:'Estreneu un castell: descarregueu-ne un que no hàgiu fet mai.'},
+    {id:'gran',x:Math.max(700,Math.round(S.seasonBest*1.15/50)*50),text:`Feu com a mínim ${fmt(Math.max(700,Math.round(S.seasonBest*1.15/50)*50))} punts a la diada.`},
+    {id:'assaig',text:'Assaig obert al poble: feu tots els assajos de la setmana.'},
+  ];
+  if(nearR)opts.push({id:'rival',ri:nearR.i,text:(/^Colla/.test(RIV[nearR.i].name)?`La ${RIV[nearR.i].name} us desafia`:`Els ${RIV[nearR.i].name} us desafien`)+': feu més punts que ells aquest cap de setmana.'});
+  if(nextP)opts.push({id:'canalla',code:nextP.code,text:`La canalla vol estrenar un pilar: descarregueu el ${nextP.name}.`});
+  const o=pick(opts);
+  const missing=REWARDS.filter(id=>!S.cards.includes(id));
+  o.card=missing.length&&Math.random()<.75?pick(missing):(Math.random()<.5?pick(S.cards):null);
+  o.bonus=o.card?40:120;o.gent=[5,8,10,12][(Math.random()*4)|0];
+  return o;
+}
+function rewardText(o){return (o.card?`${S.cards.includes(o.card)?'còpia de la carta':'carta'} ${CARDM[o.card].name}, `:'')+`${o.bonus} de bonus i ${o.gent} castellers`;}
+function newWeek(){
+  const a=avail();let slots=clamp(3+Math.floor(a/100),3,6)+S.buffs.assaig,event=null;S.buffs.assaig=0;const r=Math.random();
+  if(S.season>1||S.ev>0){
+    if(r<.10){slots=Math.max(1,slots-1);event='Ha plogut i s’ha anul·lat un assaig.';}
+    else if(r<.22){const n=4+((Math.random()*6)|0);S.members+=n;event=`Han vingut ${n} castellers nous a provar.`;}
+    else if(r<.30){S.moral=clamp(S.moral+8,10,100);event='Vermut de colla després de l’assaig: la moral puja.';}
+    else if(r<.37){S.injured.push({n:1,w:2});event='Un casteller s’ha lesionat jugant a futbol.';}
+    else if(r<.44){S.members+=3;event='S’ha apuntat mainada nova a la canalla.';}
+    else if(r<.50){S.bonus+=30;event='Un comerç del poble patrocina la colla: +30 de bonus.';}
+    else if(r<.55){S.moral=clamp(S.moral-6,10,100);event='Discussions a la junta tècnica: la moral baixa.';}
+    else if(r<.60){slots+=1;event='El local d’assaig està lliure un dia més: tens un assaig extra.';}
+  }
+  const offer=!S.repte&&(S.season>1||S.ev>0)&&Math.random()<.4?makeOffer():null;
+  S.wk={slots,assign:{},prova:false,event,offer};persist();
+}
+function closeWeek(){
+  const w=S.wk,gains=weekGains(),used=Object.values(w.assign).reduce((a,b)=>a+b,0);
+  CAST.forEach(c=>{const g=gains[c.code]||0;if(g)S.prep[c.code]=Math.min(100,prepOf(c)+g);else if(S.prep[c.code])S.prep[c.code]=Math.max(0,S.prep[c.code]-(4+8*c.diff));});
+  S.injured.forEach(x=>x.w--);S.injured=S.injured.filter(x=>x.w>0);
+  if(S.repte&&S.repte.id==='assaig'){const ok=used>=w.slots;settleRepte(ok).forEach(toast);}
+  S.wk=null;S.step='diada';persist();toast('Setmana tancada. Ara toca la diada.');go('hub');
+}
+function settleRepte(ok){
+  const r=S.repte,out=[];if(!r)return out;S.repte=null;
+  if(ok){S.bonus+=r.bonus;S.members+=r.gent;out.push(`Repte superat! +${r.bonus} de bonus i ${r.gent} castellers nous.`);
+    if(r.card)giveCard(r.card,out,true);}
+  else{S.moral=clamp(S.moral-6,10,100);out.push('Repte no superat: la moral baixa una mica.');}
+  return out;
+}
+function diadaTotal(d){
+  const ev=CAL[d.ev];
+  if(!ev.concurs)return d.rounds.reduce((a,r)=>a+r.pts,0);
+  const ok=d.rounds.filter(r=>r.pts>0).sort((a,b)=>b.pts-a.pts);let tot=0,n=0,nc=0;
+  for(const r of ok){if(n>=3)break;if(r.res==='C'){if(nc>=2)continue;nc++;}tot+=r.pts;n++;}return tot;
+}
+function applyResult(res,c,ctxType){
+  const chips=[],unl=[];let pts=0;
+  const first=res==='D'&&S.best[c.code]!=='D';
+  if(res==='D')S.best[c.code]='D';else if(res==='C'&&!S.best[c.code])S.best[c.code]='C';
+  if(ctxType==='assaig'){
+    const g=Math.round({D:14,C:8,I:3,ID:4}[res]*(1-.45*c.diff));S.prep[c.code]=Math.min(100,prepOf(c)+g);chips.push(`<span class="up">Preparació +${g}</span>`);
+    if(res==='I'){const n=1+((Math.random()*2)|0);S.injured.push({n,w:1});chips.push(`<span class="dn">${n} ${n>1?'lesionats':'lesionat'} una setmana</span>`);}
+  }else{
+    const d=S.diada,conc=CAL[d.ev].concurs,cards=d.cards;
+    pts=res==='D'?c.d:res==='C'?c.c:0;
+    if(res==='C'&&cl('ambicio')&&!conc&&(d.ambUsed||0)<1+Math.floor((cl('ambicio')-1)/2)){d.ambUsed=(d.ambUsed||0)+1;pts=c.d;chips.push('<span class="up">Ambició: puntua com a descarregat</span>');}
+    if(cl('placa')&&!conc)pts=Math.round(pts*(1+.15*mul(cl('placa'))));
+    let dm={D:2+Math.round(c.diff*6),C:1,ID:-2,I:-(7+Math.round(c.diff*8))}[res];
+    if(res==='D'&&cl('mocadors'))dm+=Math.round(4*mul(cl('mocadors')));
+    S.moral=clamp(S.moral+dm,10,100);chips.push(`<span class="${dm>0?'up':'dn'}">Moral ${dm>0?'+':''}${dm}</span>`);
+    // fer-lo a plaça també és assajar: descarregat = assaig doble, carregat = un assaig
+    const na={D:2,C:1,ID:.5}[res];
+    if(na){const p0=prepOf(c),g=prepGain(c,Math.ceil(na))*(na<1?na:1);trainCastell(c.code,g);
+      chips.push(`<span class="up">Preparació +${Math.max(1,Math.round(prepOf(c)-p0))}${ancestors(c.code).length?' (i la seva estructura)':''}</span>`);}
+    else{S.prep[c.code]=clamp(prepOf(c)-8,0,100);chips.push('<span class="dn">Preparació −8</span>');}
+    if(res==='I'){const n=1+Math.floor(Math.random()*(2+c.diff*6)),w=2+((Math.random()*2)|0);S.injured.push({n,w});chips.push(`<span class="dn">${n} ${n>1?'lesionats':'lesionat'} (${w} setmanes)</span>`);}
+    if(first)d.firsts=(d.firsts||0)+1;
+  }
+  S.tot[res]++;
+  if(first&&INEDIT.has(c.code)&&ctxType!=='assaig'){S.bonus+=300;S.members+=20;S.moral=clamp(S.moral+15,10,100);unl.unshift(`Heu fet història: primer ${c.name} descarregat! +300 de bonus i 20 castellers nous.`);}
+  if(first){chips.push('<span class="up">Primer cop!</span>');CAST.filter(x=>PRE[x.code]===c.code).forEach(x=>unl.push(`Nou castell a la cartellera: ${x.name}`));}
+  checkFites(c,res).forEach(t=>unl.push(t));
+  persist();return{pts,chips,unl};
+}
+function giveCard(id,out,copy){
+  if(!S.cards.includes(id)){S.cards.push(id);S.cardLv[id]={lv:1,cp:0};out.push(`Nova carta: ${CARDM[id].name}`);}
+  else if(copy){S.cardLv[id]=S.cardLv[id]||{lv:1,cp:0};S.cardLv[id].cp++;out.push(`Còpia de carta: ${CARDM[id].name}`);}
+}
+function checkFites(c,res){
+  const out=[],g=id=>giveCard(id,out),ok=res==='D'||res==='C';
+  if(res==='D'&&!c.pilar&&c.n>=7)g('cap');
+  if(res==='D'&&!c.pilar&&c.n>=8)g('enxaneta');
+  if(res==='I')g('segona');
+  if(ok&&c.f)g('folre');
+  if(ok&&c.m)g('manilles');
+  if(res==='D'&&c.code==='Pd6')g('pilarfe');
+  if(res==='D'&&c.code==='2d7')g('torre');
+  if(res==='D'&&c.code==='4d8')g('quatre');
+  if(res==='D'&&c.a)g('agulla');
+  if(res==='D'&&c.s)g('persota');
+  if(S.tot.D>=10)g('canalla');
+  return out;
+}
+function startDiada(){
+  const ev=CAL[S.ev],cards=(tmp.cards||[]).slice(0,3);
+  S.diada={ev:S.ev,cards,rounds:[],max:ev.concurs?5:(cards.includes('ronda')?5:4),secondLeft:0,secondUsed:false,secondFree:false,bus:S.buffs.bus>0,firsts:0};
+  S.buffs.bus=0;tmp.cards=[];
+  if(cards.includes('germanor'))S.moral=clamp(S.moral+Math.round(8*mul(lvOf('germanor'))),10,100);
+  if(cards.includes('segona'))S.diada.secondLeft=1+Math.floor((lvOf('segona')-1)/2);
+  persist();
+}
+
+/* ---------- Diades reals de la temporada 2026 (modalitat de colles reals) ----------
+   Nom de la diada i colles que hi van actuar (premsa: Ara, Diari de Tarragona, 3Cat, Nació Digital).
+   Els castells de les colles rivals sempre són simulats. A Valls (Sant Joan i Santa Úrsula) només hi actuen les dues colles de Valls:
+   si la teva colla no n'és, aquella setmana tens una altra diada. */
+const VELLA='Colla Vella dels Xiquets de Valls',JOVES='Colla Joves Xiquets de Valls',VERDS='Castellers de Vilafranca',JOVE='Colla Jove Xiquets de Tarragona',
+  XT='Xiquets de Tarragona',MINY='Minyons de Terrassa',SANTS='Castellers de Sants',MAT='Capgrossos de Mataró',IGU='Moixiganguers d’Igualada',BCN='Castellers de Barcelona',
+  GRA='Castellers de la Vila de Gràcia',REUS='Xiquets de Reus',SPP='Colla Castellera Sant Pere i Sant Pau',SERR='Xiquets del Serrallo';
+const RACT={
+ 0:{name:'Diada de Sant Joan (Valls)',valls:1,g:[JOVES,VELLA],alt:{name:'Diada de Sant Joan (Tarragona)',g:[JOVE,XT,SERR,SPP]}},
+ 1:{name:'Diada de Sant Pere (el Serrallo)',g:[SERR,'Castellers de Terrassa',IGU]},
+ 5:{name:'Les Santes (Mataró)',g:[MAT,VERDS,MINY]},
+ 7:{name:'Diada de la Mare de Déu d’Agost (la Bisbal del Penedès)',g:[JOVES,VERDS,VELLA]},
+ 8:{name:'Diada de Sant Magí (Tarragona)',g:[SERR,XT,JOVE,SPP]},
+ 10:{name:'Diada de Sant Fèlix (Vilafranca)',g:[JOVES,VERDS,JOVE,VELLA]},
+ 13:{name:'Primer Diumenge de Santa Tecla (Tarragona)',g:[VELLA,VERDS,JOVE,XT]},
+ 14:{name:'Diada de la Mercè (Barcelona)',g:[SANTS,BCN,GRA,'Colla Castellera Jove de Barcelona','Castellers de la Sagrada Família','Castellers del Poble Sec','Castellers de Sarrià']},
+ 15:{name:'Concurs de Castells (Tarragona)',conc:{
+    diumenge:[VERDS,JOVE,VELLA,JOVES,XT,IGU,BCN,SANTS,REUS,GRA,SPP,MAT],
+    dissabte:['Marrecs de Salt','Nens del Vendrell','Castellers de Lleida','Sagals d’Osona','Castellers de Sabadell','Xics de Granollers','Bordegassos de Vilanova',
+      'Castellers de Sant Cugat','Colla Castellera Jove de Barcelona','Xicots de Vilafranca',SERR,'Castellers de Castelldefels','Nois de la Torre','Castellers de Terrassa',
+      'Castellers d’Esplugues','Colla Jove de Castellers de Sitges','Castellers de la Sagrada Família','Tirallongues de Manresa'],
+    torre:['Castellers d’Esparreguera','Colla Castellera de Figueres','Castellers de Sarrià','Castellers de Badalona','Castellers de Berga','Esperxats de l’Estany',
+      'Castellers de Mollet','Castellers del Poble Sec']}},
+ 17:{name:'Diada de Santa Úrsula (Valls)',valls:1,g:[VELLA,JOVES],alt:{name:'Diada dels Castellers de Sants (Barcelona)',g:[SANTS]}},
+ 18:{name:'Diada de Sant Narcís (Girona)',g:['Marrecs de Salt',MINY,MAT]},
+ 19:{name:'Diada de Tots Sants (Vilafranca)',g:[VERDS,IGU,XT,MAT]},
+};
+// la diada real d'una setmana, tenint en compte que a Valls només hi actuen les colles de Valls
+function realEv(ev){const R=S&&S.real?RACT[ev]:null;if(!R)return null;return R.valls&&!vallsB()?R.alt:R;}
+
+/* ---------- simulació de colles rivals ---------- */
+function rivalAct(r,concurs){
+  const pk=i=>TBL[clamp(Math.round(i),0,TBL.length-1)];
+  const tryC=(c,pd)=>{const x=Math.random();return x<pd?{c,res:'D',p:c.d}:x<pd+.14?{c,res:'C',p:c.c}:{c,res:'I',p:0};};
+  if(!concurs){
+    const amb=Math.random()<.3;const used=new Set();const out=[];
+    [[r.s+(amb?1:0),amb?.5:.72],[r.s-1,.82],[r.s-2,.88]].forEach(([i,pd])=>{let c=pk(i);let k=i;while(used.has(c.code)&&k>0){k--;c=pk(k);}used.add(c.code);out.push(tryC(c,pd));});
+    const pi=r.s>=36?4:r.s>=26?3:r.s>=16?2:r.s>=6?1:0;out.push(tryC(PIL[pi],.85));
+    return{pts:out.reduce((a,x)=>a+x.p,0),list:out.map(x=>x.c.code+SUF[x.res]).join(', ')};
+  }
+  const tries=[[r.s+1,.42],[r.s,.74],[r.s-1,.82],[r.s+1,.42],[r.s-2,.86]].map(([i,pd])=>tryC(pk(i+Math.random()-.5),pd));
+  const ok=tries.filter(x=>x.p).sort((a,b)=>b.p-a.p);let t=0,n=0,nc=0;const best=[];
+  for(const x of ok){if(n>=3)break;if(best.some(b=>b.c.code===x.c.code))continue;if(x.res==='C'){if(nc>=2)continue;nc++;}t+=x.p;n++;best.push(x);}
+  return{pts:t,list:best.map(x=>x.c.code+SUF[x.res]).join(', ')};
+}
+const myCol=()=>S.colla.col?{col:S.colla.col,st:S.colla.st}:COLORS[S.colla.color]||COLORS[0];
+const colOf=n=>RIV.find(x=>x.name===n)||myCol();
+function seasonRank(){return [{name:S.colla.name,pts:S.seasonBest,me:true},...S.rivals.map((r,i)=>({name:RIV[i].name,pts:r.best}))].sort((a,b)=>b.pts-a.pts);}
+function weekendRivals(){S.lastAct={};S.rivals.forEach((r,i)=>{const a=rivalAct(r,false);S.lastAct[i]=a;r.best=Math.max(r.best,a.pts);});}
+function guestsFor(ev){
+  const out=[];const e=CAL[ev];
+  const RE=realEv(ev);
+  if(RE&&RE.g){RE.g.forEach(n=>{const i=RIV.findIndex(r=>r.name===n);if(i>=0)out.push(i);});
+    // si en falten (la teva colla era una de les convidades, o la diada té menys colles), s'hi afegeixen colles de nivell semblant
+    if(RE.valls)return out;
+    const rk=seasonRank(),me=rk.findIndex(r=>r.me);let k=0;
+    while(out.length<2&&k++<200){const n=rk[clamp(Math.round(me+(Math.random()-.5)*8),0,rk.length-1)];if(n.me)continue;const ci=RIV.findIndex(r=>r.name===n.name);if(ci>=0&&!out.includes(ci))out.push(ci);}
+    return out;}
+  if(e.town)out.push(S.towns[ev]);
+  const rk=seasonRank(),me=rk.findIndex(r=>r.me);
+  const byLevel=S.rivals.map((r,i)=>({i,s:r.s})).sort((a,b)=>b.s-a.s);
+  if(e.big){byLevel.slice(0,3).forEach(x=>{if(!out.includes(x.i)&&out.length<3)out.push(x.i);});}
+  while(out.length<(e.big?3:2)){const cand=byLevel[clamp(Math.round(me+(Math.random()-.5)*8),0,byLevel.length-1)].i;if(!out.includes(cand))out.push(cand);}
+  return out;
+}
+function endDiada(sim){
+  const d=S.diada,ev=CAL[d.ev],tot=diadaTotal(d),chips=[],notes=[];
+  let gain=0;d.rounds.forEach(r=>{const c=CM[r.code];if(r.res==='D')gain+=2+Math.round(c.d/300);else if(r.res==='C')gain+=1+Math.round(c.d/700);});
+  if(cl('reclam'))gain+=Math.round(6*mul(cl('reclam')));
+  // bonus casteller
+  let bonus=d.rounds.reduce((a,r)=>{const c=CM[r.code];return a+(r.res==='D'?c.d/30:r.res==='C'?c.c/60:0);},0)+(d.firsts||0)*25;
+  const cast3=d.rounds.filter((r,i)=>!(!ev.concurs&&i===d.max-1));
+  const rodona=!ev.concurs&&cast3.length>=3&&cast3.every(r=>r.res==='D');
+  if(rodona){bonus+=30;S.moral=clamp(S.moral+5,10,100);notes.push('Diada rodona: tots els castells descarregats.');giveCard('mans',notes);}
+  if(ev.big)bonus*=1.5;if(ev.concurs)bonus*=2;if(cl('premsa'))bonus*=1+mul(cl('premsa'));if(sim)bonus*=.6;
+  if(tot>=2000&&!ev.concurs)giveCard('placa',notes);
+  S.diades++;if(S.diades>=4)giveCard('assaig',notes);
+  if(cl('obert'))S.buffs.assaig+=2+Math.floor((cl('obert')-1)/2);
+  let table=null,tableTitle='';
+  if(ev.concurs){
+    const rk=seasonRank(),pos0=rk.findIndex(r=>r.me);
+    const jor=pos0<12?'diumenge':pos0<24?'dissabte':'Torredembarra';
+    const lo=jor==='diumenge'?0:jor==='dissabte'?12:24,hi=jor==='diumenge'?12:jor==='dissabte'?24:41;
+    let names=rk.slice(lo,hi).filter(r=>!r.me).map(r=>r.name);
+    const RC=S.real&&RACT[d.ev]&&RACT[d.ev].conc?RACT[d.ev].conc[jor==='Torredembarra'?'torre':jor]:null;
+    if(RC)names=RC.filter(n=>RIV.some(r=>r.name===n));
+    const rows=[{name:S.colla.name,pts:tot,me:true,list:d.rounds.map(r=>r.code+SUF[r.res]).join(', ')}];
+    names.forEach(n=>{const i=RIV.findIndex(x=>x.name===n);const a=rivalAct(S.rivals[i],true);S.rivals[i].conc=a.pts;rows.push({name:n,pts:a.pts,list:a.list});});
+    rows.sort((a,b)=>b.pts-a.pts);const pos=rows.findIndex(r=>r.me)+1;S.concurs={pos,pts:tot,jornada:jor};
+    tableTitle=`Classificació de la jornada de ${jor}`;
+    table=rows.map((r,i)=>`<tr class="${r.me?'me':''}"><td>${i+1}</td><td>${cdot(r.me?myCol():colOf(r.name))}${esc(r.name)}<br><span class="sub">${cdList(r.list)}</span></td><td class="r">${fmt(r.pts)}</td></tr>`).join('');
+    const prize=pos===1?[20,15,200]:pos<=3?[12,10,120]:pos<=6?[6,5,60]:[2,0,20];gain+=prize[0];S.moral=clamp(S.moral+prize[1],10,100);bonus+=prize[2];
+    notes.unshift(pos===1?`Heu guanyat la jornada de ${jor} del Concurs!`:`${pos}a posició a la jornada de ${jor} del Concurs.`);
+    if(pos<=3&&jor==='diumenge')giveCard('mistica',notes);
+  }else{
+    weekendRivals();
+    S.seasonBest=Math.max(S.seasonBest,tot);
+    const g=guestsFor(d.ev);tableTitle='Colles a plaça';
+    const rows=[{name:S.colla.name,pts:tot,me:true,list:d.rounds.map(r=>r.code+SUF[r.res]).join(', ')},...g.map(i=>({name:RIV[i].name,pts:S.lastAct[i].pts,list:S.lastAct[i].list}))];
+    table=rows.map(r=>`<tr class="${r.me?'me':''}"><td></td><td>${cdot(r.me?myCol():colOf(r.name))}${esc(r.name)}<br><span class="sub">${cdList(r.list)}</span></td><td class="r">${fmt(r.pts)}</td></tr>`).join('');
+    const pos=seasonRank().findIndex(r=>r.me)+1;chips.push(`<span>${pos}a al rànquing</span>`);
+  }
+  // reptes
+  if(S.repte&&S.repte.id!=='assaig'){
+    const r=S.repte;let ok=false;
+    if(r.id==='tv')ok=rodona;
+    else if(r.id==='subv')ok=d.rounds.some(x=>(x.res==='D'||x.res==='C')&&CM[x.code].n>=r.n&&!CM[x.code].pilar);
+    else if(r.id==='net')ok=d.rounds.every(x=>x.res!=='I');
+    else if(r.id==='estrena')ok=(d.firsts||0)>0;
+    else if(r.id==='gran')ok=tot>=r.x;
+    else if(r.id==='rival')ok=!S.lastAct[r.ri]||tot>S.lastAct[r.ri].pts;
+    else if(r.id==='canalla')ok=d.rounds.some(x=>x.code===r.code&&x.res==='D');
+    settleRepte(ok).forEach(t=>notes.push(t));
+  }
+  bonus=Math.round(bonus);S.bonus+=bonus;
+  S.members+=gain;chips.unshift(`<span class="up">+${gain} castellers</span>`,`<span class="up">+${bonus} bonus</span>`);chips.push(`<span>Moral ${Math.round(S.moral)} %</span>`);
+  if(sim)notes.unshift('Diada simulada.');
+  S.results.push({ev:d.ev,pts:tot,list:d.rounds.map(r=>r.code+SUF[r.res]).join(', ')});
+  const evIdx=d.ev;S.diada=null;advanceWeek();
+  persist();
+  go('summary',{evName:evName(evIdx),title:ev.concurs?'Concurs acabat':tot>0?'Diada acabada':'Diada en blanc',pts:tot,chips,notes,table,tableTitle,seasonEnd:S.ev>=CAL.length});
+}
+function advanceWeek(){S.ev++;S.step='assaig';}
+function simulateDiada(){
+  startDiada();const d=S.diada,ev=CAL[d.ev];
+  for(let i=0;i<d.max;i++){
+    const isP=!ev.concurs&&i===d.max-1,done=new Set(d.rounds.filter(r=>r.res==='D'||r.res==='C').map(r=>r.code));
+    const pool=CAST.filter(c=>(isP?c.pilar:(ev.concurs?c.table:!c.pilar))&&!lockWhy(c)&&!done.has(c.code)).sort((a,b)=>b.d-a.d);
+    if(!pool.length){d.rounds.push({code:isP?'Pd4':'3d6',res:'ID',pts:0});continue;}
+    const c=pool.find(c=>effE(c,'diada')<.55)||pool[pool.length-1],E=effE(c,'diada');
+    const pD=clamp(1.02-.95*E,.05,.97),x=Math.random(),res=x<pD?'D':x<pD+(1-pD)*.45?'C':'I';
+    const o=applyResult(res,c,'diada');d.rounds.push({code:c.code,res,pts:o.pts});
+  }
+  endDiada(true);
+}
+function newSeason(){
+  S.season++;S.ev=0;S.step='assaig';S.members=Math.round(S.members*.92);S.seasonBest=0;S.results=[];S.concurs=null;S.wk=null;S.repte=null;S.towns=seasonTowns();
+  Object.keys(S.prep).forEach(k=>S.prep[k]=Math.round(S.prep[k]*.55));
+  S.rivals.forEach(r=>{r.s=clamp(r.s+(Math.random()<.6?1:0)-(Math.random()<.15?1:0),0,TBL.length-1);r.best=0;r.conc=0;});persist();go('hub');
+}
+
+/* ================= Accions ================= */
+function openPack(got){
+  const col=shirt(),el=document.createElement('div');el.id='pack';
+  const card=(g,i)=>{const c=CARDM[g.id],need=LVNEED[g.lv]||0,up=g.lv<LVMAX&&g.cp>=need;
+    return `<div class="pc" style="--d:${1.15+i*.5}s"><div class="pc-in${up?' glow':''}">
+      <div class="pc-f pc-back" style="--c:${col}"><span>Fem<br>pinya!</span></div>
+      <div class="pc-f pc-face"><div class="pc-ic">${c.ico}</div><b>${c.name}</b>
+        <span class="pc-lv">${'★'.repeat(g.lv)}<i>${'★'.repeat(LVMAX-g.lv)}</i></span>
+        <span class="pc-cp">+1 còpia: ${g.cp} de ${need}</span>${up?'<span class="pc-up">Ja pots pujar de nivell!</span>':''}</div></div></div>`;};
+  el.innerHTML=`<div class="pk-bg"></div><div class="pk-box">
+    <div class="pk-env" style="--c:${col}"><div class="pk-flap"></div></div>
+    <div class="pk-cards">${got.map(card).join('')}</div>
+    <button class="btn main pk-ok" data-act="packOk">Continua</button></div>`;
+  document.getElementById('app').appendChild(el);
+  got.forEach((g,i)=>setTimeout(()=>{try{sfx.ding();}catch(e){}},1350+i*500));
+  setTimeout(()=>{try{tone(300,0,.25,'triangle',.08);noise(.3,.12,2500);}catch(e){}},700);
+}
+const ACT={
+  packOk(){const p=document.getElementById('pack');if(p)p.remove();rerender('hub');},
+  home(){go('home');},
+  gam(d){tmp.gam=tmp.gam||{};tmp.gam[d.k]=d.g;if(view==='hub'){$('#tabc').innerHTML=TABS[tab]();}else rerender(view);},
+  lvup(d){const st=S.cardLv[d.id],L=st.lv,need=LVNEED[L];if(L>=LVMAX||st.cp<need)return;st.cp-=need;st.lv++;persist();toast(`${CARDM[d.id].name} puja al nivell ${st.lv}!`);$('#tabc').innerHTML=TABS[tab]();},
+  style(){setStyle(STYLE==='real'?'dibuix':'real');rerender(view);},
+  music(){setMusic(!musicOn());rerender(view);},
+  create(){tmp={};go('create');},
+  hub(){if(!S){go('home');return;}go('hub');},
+  pickColor(d){tmp.color=+d.i;makePinya(scene.F,scene.c);go('create');},
+  setReal(d){tmp.real=d.v==='1';makePinya(scene.F,scene.c);rerender('create');},
+  setAs(d){tmp.as=+d.v;makePinya(scene.F,scene.c);rerender('create');},
+  setLvl(d){tmp.lvl=d.v==='1';rerender('create');},
+  setNom(d){setNom(d.v);rerender(view);},
+  found(){const asR=tmp.real&&tmp.as>=0;const nm=asR?REAL[tmp.as].name:(($('#cName')||{}).value||'').trim()||'Castellers de la Plaça';newSave(nm,tmp.color||0,tmp.real,asR?tmp.as:-1,tmp.lvl);tab='castells';setScene(CM['3d6']);toast('Benvinguts a '+nm+'!');go('hub');},
+  tab(d){tab=d.t;$('#tabc').innerHTML=TABS[tab]();document.querySelectorAll('.tabs button').forEach(b=>b.classList.toggle('on',b.dataset.t===tab));},
+  sound(){S.sound=S.sound===false;persist();rerender('hub');},
+  assaig(){if(tmp.gam)delete tmp.gam.assaig;go('assaig');},
+  asg(d){const w=S.wk,used=Object.values(w.assign).reduce((a,b)=>a+b,0);const n=w.assign[d.code]||0,dd=+d.d;
+    if(dd>0&&used>=w.slots)return;w.assign[d.code]=Math.max(0,n+dd);persist();rerender('assaig');},
+  prova(d){S.wk.prova=true;persist();ensureAudio();startAttempt(d.code,'assaig',(res,c)=>{const o=applyResult(res,c,'assaig');setScene(bestCastell());go('result',Object.assign({res,c,assaig:true},o));});},
+  closeWeek(){closeWeek();},
+  repteOk(){S.repte=S.wk.offer;S.wk.offer=null;persist();toast('Repte acceptat!');rerender('assaig');},
+  repteNo(){S.wk.offer=null;persist();rerender('assaig');},
+  vacances(){CAST.forEach(c=>{if(S.prep[c.code])S.prep[c.code]=Math.max(0,S.prep[c.code]-9);});S.injured=[];S.moral=clamp(S.moral+3,10,100);
+    advanceWeek();persist();toast('Bones vacances! La colla torna amb forces.');go('hub');},
+  diada(){if(S.diada)go('diada');else{tmp.cards=[];go('diadaCards');}},
+  tcard(d){tmp.cards=tmp.cards||[];const i=tmp.cards.indexOf(d.id);if(i>=0)tmp.cards.splice(i,1);else if(tmp.cards.length<3)tmp.cards.push(d.id);else toast('Només pots portar 3 cartes.');rerender('diadaCards');},
+  startDiada(){startDiada();playMus('entrada',true);go('diada');},
+  simDiada(){simulateDiada();},
+  pick(){if(tmp.gam)delete tmp.gam.pick;go('pick');},
+  pickD(d){ensureAudio();startAttempt(d.code,'diada',(res,c)=>{
+    const o=applyResult(res,c,'diada');const dd=S.diada;
+    if(res==='I'&&(dd.secondLeft||0)>0){dd.secondLeft--;dd.secondFree=true;o.unl.unshift('Segona oportunitat: pots repetir la ronda.');}
+    else{dd.rounds.push({code:c.code,res,pts:o.pts});dd.secondFree=false;}
+    persist();setScene(bestCastell());go('result',Object.assign({res,c},o));});},
+  endDiada(){endDiada(false);},
+  buy(d){const it=SHOP.find(x=>x.id===d.id);if(!it||S.bonus<it.cost)return;S.bonus-=it.cost;let msg=it.name+' fet.';
+    switch(it.id){
+      case 'assaig':S.buffs.assaig+=1;msg='Tindràs un assaig extra la setmana vinent.';break;
+      case 'bus':S.buffs.bus=1;msg='L’autocar portarà més gent a la propera diada.';break;
+      case 'cervesa':S.moral=clamp(S.moral+10,10,100);S.members+=3;msg='Cervesa gratis! +10 de moral i 3 castellers nous.';break;
+      case 'fisio':S.injured=[];msg='Tots els lesionats estan recuperats.';break;
+      case 'sopar':S.moral=clamp(S.moral+15,10,100);S.members+=5;msg='Sopar de germanor: +15 de moral i 5 castellers nous.';break;
+      case 'camises':S.members+=8;S.moral=clamp(S.moral+5,10,100);msg='Camises noves: 8 castellers nous.';break;
+      case 'costellada':S.moral=clamp(S.moral+20,10,100);msg='Costellada de colla: +20 de moral.';break;
+      case 'xarxes':S.members+=12;msg='La campanya funciona: 12 castellers nous.';break;
+      case 'escola':CAST.forEach(c=>{if(prereqOk(c))S.prep[c.code]=Math.min(100,prepOf(c)+10);});msg='Escola de canalla: +10 de preparació a tots els castells.';break;
+      case 'sobre':{const m=S.cards.filter(id=>lvOf(id)<LVMAX);if(!m.length){S.bonus+=it.cost;msg='Totes les teves cartes ja són al nivell màxim.';break;}
+        const got=[];for(let i=0;i<4;i++){const id=pick(m);S.cardLv[id].cp++;got.push({id,cp:S.cardLv[id].cp,lv:lvOf(id)});}
+        persist();openPack(got);return;}
+    }
+    persist();toast(msg);rerender('hub');},
+  seasonEnd(){go('seasonEnd');},
+  newSeason(){newSeason();},
+};
+document.addEventListener('click',e=>{if(!musStarted&&!att)playBg();const a=e.target.closest('[data-act]');if(!a||a.disabled)return;ensureAudio();const f=ACT[a.dataset.act];if(f)f(a.dataset);});
+
+window.addEventListener('resize',resize);
+scene.F=buildFloors(scene.c);
+resize();go(S?'hub':'home');requestAnimationFrame(loop);
+
+
+if('serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js').catch(()=>{});
+</script>
+</body>
+</html>
