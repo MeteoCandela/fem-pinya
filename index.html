@@ -1201,7 +1201,7 @@ function updateAttempt(dt){
 function leanPx(){return att.L*fw*1.15;}
 function floorXAt(i,nuO){const a=att,nu=nuO||Math.max(1,a.up-1);return cx+leanPx()*Math.pow(clamp(i/nu,0,1.2),1.5)+Math.sin(T*23+i*1.7)*Math.min(3,Math.abs(a.L)*2.2)*(i/a.n);}
 function agullaVis(){
-  const a=att;if(!a.A||a.phase==='fall')return[];const out=[];
+  const a=att;if(!a.A||a.phase==='fall'||a.phase==='celebra')return[];const out=[];
   if(a.phase==='descentP'){const full=Math.floor(a.pu+1e-6),fr=a.pu-full,nu=Math.max(1,a.pu-1);
     for(let j=1;j<a.A.length;j++){if(j<full)out.push({p:a.A[j],x:floorXAt(j,nu),al:1,dy:0});else if(j===full&&fr>.001)out.push({p:a.A[j],x:floorXAt(j,nu),al:fr,dy:(1-fr)*a.A[j].hh*.8});}
     return out;}
