@@ -1356,7 +1356,7 @@ home(){
    <p class="sub" style="margin-top:14px;font-size:12.5px">Joc de fans sense afany de lucre. No té cap relació oficial amb les colles castelleres, la Coordinadora de Colles Castelleres de Catalunya ni el Concurs de Castells. Els noms i colors de les colles s’usen només per identificar-les; les seves actuacions són simulades.</p>`);
 },
 create(){
-  tmp.color=tmp.color??0;tmp.name=tmp.name??'Castellers de ';tmp.real=tmp.real??true;tmp.as=tmp.as??-1;tmp.lvl=tmp.lvl??true;
+  tmp.color=tmp.color??0;tmp.name=tmp.name??'Castellers de ';tmp.real=tmp.real??true;tmp.as=tmp.as??-1;tmp.lvl=tmp.lvl??false;
   ui(`<h2>Funda la colla</h2><p class="sub">${tmp.real&&tmp.as>=0&&tmp.lvl?'Comences amb els castells, la gent i la preparació que té la colla ara.':'Comences amb la gamma bàsica de 6 (3, 4 i 2 de 6) i el pilar de 4.'}</p>
    <h3>Colles rivals</h3><div class="seg"><button class="${tmp.real?'on':''}" data-act="setReal" data-v="1"><b>Reals</b><span>Les 40 colles top, amb el seu nom i camisa</span></button>
      <button class="${!tmp.real?'on':''}" data-act="setReal" data-v="0"><b>Inventades</b><span>40 colles de pobles imaginaris</span></button></div>
@@ -1364,8 +1364,8 @@ create(){
      <button class="${tmp.as>=0?'on':''}" data-act="setAs" data-v="${tmp.as>=0?tmp.as:1}"><b>Una colla real</b><span>Jugues amb una de les 40</span></button></div>
      ${tmp.as>=0?`<select id="cAs" aria-label="Colla real">${REAL.map((r,i)=>`<option value="${i}" ${i===tmp.as?'selected':''}>${esc(r.name)}</option>`).join('')}</select>
      ${VALLSN.has(REAL[tmp.as].name)?'<p class="note" style="color:var(--gold)">Colla fundadora del món casteller: necessiteu un 10 % menys de gent i els castells nets (sense folre) aguanten més abans de caure.</p>':''}
-     <div class="seg"><button class="${tmp.lvl?'on':''}" data-act="setLvl" data-v="1"><b>Amb el seu nivell</b><span>Castells, gent i preparació d’ara</span></button>
-     <button class="${!tmp.lvl?'on':''}" data-act="setLvl" data-v="0"><b>Des de zero</b><span>Gamma bàsica de 6 i 120 castellers</span></button></div>`:''}`:''}
+     <div class="seg"><button class="${!tmp.lvl?'on':''}" data-act="setLvl" data-v="0"><b>Des de zero (recomanat)</b><span>Gamma bàsica de 6 i 120 castellers</span></button>
+     <button class="${tmp.lvl?'on':''}" data-act="setLvl" data-v="1"><b>Amb el seu nivell</b><span>Castells, gent i preparació d’ara</span></button></div>`:''}`:''}
    <h3>Nomenclatura</h3>${nomSeg()}
    ${tmp.real&&tmp.as>=0?'':`<h3>Nom</h3><input type="text" id="cName" maxlength="34" value="${esc(tmp.name)}" aria-label="Nom de la colla">
    <h3>Color de la camisa</h3><div class="colors">${COLORS.map((c,i)=>`<button class="chip${i===tmp.color?' on':''}" data-act="pickColor" data-i="${i}" style="background:${c}" aria-label="Color ${i+1}"></button>`).join('')}</div>`}
@@ -1826,7 +1826,7 @@ const ACT={
   lvup(d){const st=S.cardLv[d.id],L=st.lv,need=LVNEED[L];if(L>=LVMAX||st.cp<need)return;st.cp-=need;st.lv++;persist();toast(`${CARDM[d.id].name} puja al nivell ${st.lv}!`);$('#tabc').innerHTML=TABS[tab]();},
   style(){setStyle(STYLE==='real'?'dibuix':'real');rerender(view);},
   music(){setMusic(!musicOn());rerender(view);},
-  create(){tmp={};go('create');},
+  create(){tmp={};setNom('vallenca');go('create');},
   hub(){if(!S){go('home');return;}go('hub');},
   pickColor(d){tmp.color=+d.i;makePinya(scene.F,scene.c);go('create');},
   setReal(d){tmp.real=d.v==='1';makePinya(scene.F,scene.c);rerender('create');},
