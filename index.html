@@ -492,6 +492,10 @@ function avail(){
 }
 function prereqOk(c){const p=PRE[c.code];return !p||S.best[p]==='D';}
 function prepOf(c){return S.prep[c.code]||0;}
+// preparació que demana cada gamma: per sota, el castell es torna inestable (gamma extra i inèdits van a part, amb el 80 %)
+function prepNeed(c){if(GE.has(c.code)||INEDIT.has(c.code))return null;
+  const lv=c.pilar?(c.n<=4?6:c.n===5?7:c.n===6?8:9):Math.min(9,c.n);
+  return lv<=6?null:lv===7?{t:.65,w:1.1,h:.6}:lv===8?{t:.75,w:1.1,h:.6}:{t:.8,w:1.1,h:.6};}
 function effE(c,ctxType){
   const D=ctxType==='diada',L=id=>D?cl(id):0;
   const extra=L('assaig')?25*mul(L('assaig')):0;
@@ -502,6 +506,7 @@ function effE(c,ctxType){
   // gamma extra i inèdits: sense una preparació del 80 % gairebé no surten
   if(GE.has(c.code)||INEDIT.has(c.code)){const ined=INEDIT.has(c.code),short=clamp((.8-p)/.12,0,1);
     E+=short*(ined?.9:.65)+(ined?.06:0);}
+  {const pn=prepNeed(c);if(pn)E+=clamp((pn.t-p)/pn.t,0,1)*pn.w;}
   if(L('tecnic'))E-=.06*mul(L('tecnic'));
   if(L('sort')&&S.best[c.code]!=='D')E-=.1*mul(L('sort'));
   if(L('mistica')>1)E-=.02*(L('mistica')-1);
@@ -1090,6 +1095,8 @@ function attemptParams(c,ctxType){
   if(c.pilar){P.k*=1.06;P.tF*=.85;}
   if(GE.has(c.code)||INEDIT.has(c.code)){const pp=clamp(prepOf(c)+(ctxType==='diada'&&cl('assaig')?25*mul(cl('assaig')):0),0,100)/100,short=clamp((.8-pp)/.12,0,1);
     P.hold*=1-.5*short;P.thr*=1-.15*short;}
+  {const pn=prepNeed(c);if(pn){const pp=clamp(prepOf(c)+(ctxType==='diada'&&cl('assaig')?25*mul(cl('assaig')):0),0,100)/100,short=clamp((pn.t-pp)/pn.t,0,1);
+    P.hold*=1-pn.h*short;P.thr*=1-.1*short;}}
   if(vallsB()&&!c.f){P.thr*=1.15;P.hold*=1.3;}
   const lv=id=>ctxType==='diada'?cl(id):0,m=id=>mul(lv(id));
   if(lv('gralles'))P.noise*=1-red(.2,lv('gralles'));
@@ -1131,7 +1138,7 @@ function setPhase(t){$('#pPhase').textContent=tx(t);}
 function physics(dt){
   const a=att,P=a.P,upE=a.phase==='descentP'?a.pu:a.up;
   // als castells molt difícils, els primers pisos són més tranquils: la dificultat de veritat arriba a partir dels quints-sisens
-  const ramp=clamp((upE-3.5)/2.5,0,1),hard=clamp((P.E-.7)/.4,0,1),ease=1-hard*(1-ramp)*.6+hard*ramp*.1;
+  const ramp=clamp((upE-(a.n-5.5))/2.5,0,1),hard=clamp((P.E-.7)/.4,0,1)*clamp(a.n-8,0,1),ease=1-hard*(1-ramp)*.6+hard*ramp*.1;
   const hf=(.3+.7*Math.pow(clamp(upE/a.n,0,1),1.2))*ease,thr=a.thrNow=P.thr*(1+hard*(1-ramp)*.35);
   a.nt+=dt;
   const nz=P.noise*hf*(Math.sin(1.3*a.nt+a.ph[0])+.6*Math.sin(2.7*a.nt+a.ph[1])+.35*Math.sin(5.3*a.nt+a.ph[2]))/1.95;
