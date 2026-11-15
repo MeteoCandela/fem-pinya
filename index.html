@@ -258,17 +258,17 @@ function cordons(w,n,mods,f,m,p){
   if(f)return n>=9?9:8;
   return w===1?n-1:n-2;
 }
-// Nomenclatura: vallenca (2 de, amb pilar, anxaneta, acotxador) o vilafranquina (torre, amb l’agulla, enxaneta, aixecador)
+// Nomenclatura: vallenca (2 de, amb pilar, aixecador, net) o vilafranquina (torre, amb l’agulla, acotxador, sense folre)
 let NOMK=(()=>{try{return localStorage.getItem('fem-pinya-nom')||'vallenca';}catch(e){return 'vallenca';}})();
 const VALL=()=>NOMK==='vallenca';
 function castName(c){
   const V=VALL();let b=c.w===1?`Pilar de ${c.n}`:(c.w===2&&!V)?`Torre de ${c.n}`:`${c.w} de ${c.n}`;
-  let m=MODNAME[c.mods];if(V)m=m.replace(' amb l’agulla',' amb pilar').replace(' i l’agulla',' i pilar');return b+m;}
+  let m=MODNAME[c.mods];if(V)m=m.replace(' amb l’agulla',' amb pilar').replace(' i l’agulla',' i pilar').replace(/^ sense folre$/,' net');return b+m;}
 function cd(code){return VALL()?code.replace(/^(\dd\d+)a(f?)$/,(x,a,f)=>a+(f?'fp':'p')):code.replace(/^2d/,'Td');}
 function cdList(s){return String(s).replace(/\d+d\d+[a-z]*/g,m=>cd(m));}
-function tx(t){t=String(t);return VALL()?t.replace(/enxaneta/g,'anxaneta').replace(/Enxaneta/g,'Anxaneta'):t.replace(/acotxador/g,'aixecador').replace(/Acotxador/g,'Aixecador');}
-function NOM(){return VALL()?{carregatAg:'Castell carregat: només queda el pilar',aletaAg:'L’anxaneta fa l’aleta dalt del pilar!',quedaAg:'Queda el pilar del mig: ara baixa',
-    passaAg:'L’anxaneta passa al pilar amb l’ajuda dels dosos',fetAg:'Castell i pilar descarregats!',agOf:'del pilar'}
+function tx(t){t=String(t);return VALL()?t.replace(/acotxador/g,'aixecador').replace(/Acotxador/g,'Aixecador'):t;}
+function NOM(){return VALL()?{carregatAg:'Castell carregat: només queda el pilar',aletaAg:'L’enxaneta fa l’aleta dalt del pilar!',quedaAg:'Queda el pilar del mig: ara baixa',
+    passaAg:'L’enxaneta passa al pilar amb l’ajuda dels dosos',fetAg:'Castell i pilar descarregats!',agOf:'del pilar'}
   :{carregatAg:'Castell carregat: només queda l’agulla',aletaAg:'L’enxaneta fa l’aleta dalt de l’agulla!',quedaAg:'Queda l’agulla: ara baixa',
     passaAg:'L’enxaneta passa a l’agulla amb l’ajuda dels dosos',fetAg:'Castell i agulla descarregats!',agOf:'de l’agulla'};}
 const CAST=RAW.map(r=>{
@@ -1492,8 +1492,8 @@ function rankTable(rk,limit){
   const me=rk.findIndex(r=>r.me);
   return `<table>${rk.map((r,i)=>(!limit||i<limit||Math.abs(i-me)<=1)?`<tr class="${r.me?'me':''}"><td>${i+1}</td><td>${cdot(r.me?myCol():colOf(r.name))}${esc(r.name)}</td><td class="r">${fmt(r.pts)}</td></tr>`:(i===limit?'<tr><td></td><td class="sub">…</td><td></td></tr>':'')).join('')}</table>`;
 }
-function nomSeg(){const V=VALL();return `<div class="seg"><button class="${V?'on':''}" data-act="setNom" data-v="vallenca"><b>Vallenca</b><span>2 de 8, 4 de 8 amb pilar, anxaneta</span></button>
-  <button class="${!V?'on':''}" data-act="setNom" data-v="vilafranquina"><b>Vilafranquina</b><span>Torre de 8, 4 de 8 amb l’agulla, enxaneta</span></button></div>`;}
+function nomSeg(){const V=VALL();return `<div class="seg"><button class="${V?'on':''}" data-act="setNom" data-v="vallenca"><b>Vallenca</b><span>2 de 8, 4 de 9 net, aixecador</span></button>
+  <button class="${!V?'on':''}" data-act="setNom" data-v="vilafranquina"><b>Vilafranquina</b><span>Torre de 8, 4 de 9 sense folre, acotxador</span></button></div>`;}
 function setNom(v){NOMK=v==='vilafranquina'?'vilafranquina':'vallenca';try{localStorage.setItem('fem-pinya-nom',NOMK);}catch(e){}applyNom();}
 const TABS={
 castells(){
