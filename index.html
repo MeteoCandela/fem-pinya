@@ -1130,7 +1130,26 @@ function attemptParams(c,ctxType){
   if(lv('silenci'))P.slow=1-red(.15,lv('silenci'),.4);
   return P;
 }
-function startAttempt(code,ctxType,onDone){
+/* ---------- Efectes: paperets en descarregar, pols en fer llenya ---------- */
+let FX=[];
+function confetti(x,y,n){const cols=[shirt(),'#ffffff','#f2c230','#d3241c','#ffffff',shirt()];
+  for(let i=0;i<n;i++){const a=-Math.PI/2+(Math.random()-.5)*2.2,v=140+Math.random()*260;
+    FX.push({k:'c',x:x+(Math.random()-.5)*fw*1.5,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,c:cols[i%cols.length],w:fw*(.09+.06*Math.random()),hh:fw*(.05+.03*Math.random()),
+      r:Math.random()*6,vr:(Math.random()-.5)*14,ph:Math.random()*6,sp:6+Math.random()*8,t:0,life:3.2+Math.random()*1.5});}}
+function dust(x,y,n,big){for(let i=0;i<n;i++)FX.push({k:'d',x:x+(Math.random()-.5)*fw*(big?2.4:.8),y:y-Math.random()*fw*.2,vx:(Math.random()-.5)*(big?90:50),vy:-(10+Math.random()*30),
+  r0:fw*(big?.35:.22)*(.7+.6*Math.random()),t:0,life:(big?1.4:1)+Math.random()*.6});}
+function updFX(dt){FX=FX.filter(p=>{p.t+=dt;if(p.t>p.life)return false;
+  if(p.k==='c'){p.vy=Math.min(p.vy+380*dt,95);p.vx*=Math.pow(.25,dt);p.x+=(p.vx+Math.sin(p.t*3+p.ph)*35)*dt;p.y+=p.vy*dt;p.r+=p.vr*dt;}
+  else{p.vx*=Math.pow(.3,dt);p.vy*=Math.pow(.3,dt);p.x+=p.vx*dt;p.y+=p.vy*dt;}
+  return true;});}
+function drawFX(){FX.forEach(p=>{
+  if(p.k==='c'){const fl=Math.cos(p.t*p.sp+p.ph);ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.r);ctx.scale(1,Math.max(.12,Math.abs(fl)));
+    ctx.globalAlpha=Math.min(1,(p.life-p.t)/.6);ctx.fillStyle=fl>0?p.c:shade(p.c,-.25);ctx.fillRect(-p.w/2,-p.hh/2,p.w,p.hh);ctx.restore();}
+  else{const q=p.t/p.life,r=p.r0*(1+q*2.2);ctx.globalAlpha=.42*(1-q)*(1-q);ctx.fillStyle='#a8957a';
+    ctx.beginPath();ctx.arc(p.x,p.y,r,0,Math.PI*2);ctx.fill();}});ctx.globalAlpha=1;}
+// càmera lenta a l'aleta: s'alenteix en arribar dalt i recupera el ritme en acabar
+function timeScale(){const a=att;if(!a||a.phase!=='aleta')return 1;const p=a.pt/a.aDur;return 1-.55*clamp(p/.12,0,1)*clamp((1-p)/.15,0,1);}
+function startAttempt(code,ctxType,onDone){FX=[];
   const c=CM[code],F=buildFloors(c);
   setTod(ctxType==='diada'&&S.diada?CAL[S.diada.ev].tod:'tarda');
   layout(F);const A=buildAgulla(c,F);layoutAgulla(A,F);makePinya(F,c);
@@ -1206,7 +1225,7 @@ function updateAttempt(dt){
     case 'celebra':a.L*=.9;if(a.pt>2.8)finishAttempt('D');break;
     case 'fall':
       a.parts.forEach(p=>{if(p.rest)return;p.vy+=1100*dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.rot+=p.vr*dt;
-        if(p.y>p.ry){p.y=p.ry;if(p.vy>170){p.vy*=-.25;p.vx*=.5;p.vr*=.5;}else p.rest=true;}});
+        if(p.y>p.ry){p.y=p.ry;if(!p.hit){p.hit=true;dust(p.x,p.ry+fw*.1,3,false);cam.shake=Math.max(cam.shake,5);}if(p.vy>170){p.vy*=-.25;p.vx*=.5;p.vr*=.5;}else p.rest=true;}});
       if(a.pt>2.2)finishAttempt(a.carregat?'C':'I');break;
   }
 }
@@ -1229,10 +1248,13 @@ function fall(){
   for(let i=1;i<full;i++){const f=a.F[i];figXs(floorXAt(i),f).forEach((x,j)=>add(f,x,i,i*10+j));}
   agullaVis().forEach((v,j)=>add(v.p,v.x,v.p.src||j,700+j));
   a.phase='fall';a.pt=0;$('#dismount').classList.add('hidden');
-  stopMus('castells');a.fallUp=a.up;a.up=1;a.pu=1;cam.shake=10;setPhase('S’ha fet llenya');sfx.crash();haptic([50,40,90]);
+  stopMus('castells');a.fallUp=a.up;a.up=1;a.pu=1;cam.shake=16+Math.min(14,a.fallUp*1.6);dust(cx,ground,10,true);setPhase('S’ha fet llenya');sfx.crash();haptic([50,40,90]);
 }
 // pinya de celebració: tothom amb els braços amunt; es fa en el moment de descarregar
-function startCele(){const a=att;if(!a||pinyaKeep)return;pinyaKeep=pinya;celeFrames=[];CELE=true;
+function startCele(){const a=att;if(!a||pinyaKeep)return;{// els paperets cauen des de dalt de la pantalla i esclaten des del mig de la plaça
+  const vTop=(H*cam.z-cam.Ay)/cam.z,vw=W/cam.z;
+  const rain=k=>{for(let i=0;i<k;i++){confetti(cx+(Math.random()-.5)*vw,vTop-Math.random()*40,1);const q=FX[FX.length-1];q.vx*=.25;q.vy=40+Math.random()*60;}};
+  rain(110);confetti(cx,ground-h*1.2,50);setTimeout(()=>{if(att)rain(70);},450);}pinyaKeep=pinya;celeFrames=[];CELE=true;
   try{for(let k=0;k<3;k++){CELE_K=k;makePinya(a.F,a.c);pinya.heads=pinyaKeep.heads;celeFrames.push(pinya);}}finally{CELE=false;}}
 function endCele(){if(pinyaKeep){pinya=pinyaKeep;pinyaKeep=null;}celeFrames=null;}
 function finishAttempt(res){
@@ -1285,6 +1307,7 @@ function draw(){
     ctx.drawImage(pinya.cv,0,pinya.top,W,H-pinya.top);drawRings();
     if(a.phase==='aleta'||a.phase==='celebra')drawMocadors();
     a.parts.forEach(p=>{ctx.save();ctx.translate(p.x,p.y-p.f.hh*.5);ctx.rotate(p.rot);drawFig(0,p.f.hh*.5,p.f,{seed:p.seed});ctx.restore();});
+    if(FX.length)drawFX();
   }
   ctx.setTransform(DPR,0,0,DPR,0,0);
   if(TOD[curTod].tint){ctx.fillStyle=TOD[curTod].tint;ctx.fillRect(0,0,W,H);}
@@ -1309,9 +1332,9 @@ function drawMeter(){
 }
 let last=0;
 function loop(ts){
-  const dt=Math.min(.05,(ts-last)/1000||0);last=ts;T+=dt;
-  if(att)updateAttempt(dt);
-  camTarget();const k=Math.min(1,dt*3.2);cam.z+=(cam.tz-cam.z)*k;cam.Ay+=(cam.tAy-cam.Ay)*k;cam.shake=Math.max(0,cam.shake-dt*18);
+  const dt0=Math.min(.05,(ts-last)/1000||0),dt=dt0*timeScale();last=ts;T+=dt;
+  if(att)updateAttempt(dt);if(FX.length)updFX(dt);
+  camTarget();const k=Math.min(1,dt*3.2);cam.z+=(cam.tz-cam.z)*k;cam.Ay+=(cam.tAy-cam.Ay)*k;cam.shake=Math.max(0,cam.shake-dt0*(cam.shake>8?26:14));
   draw();requestAnimationFrame(loop);
 }
 
