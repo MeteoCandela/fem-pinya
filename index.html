@@ -784,7 +784,11 @@ function drawFigToon(x,y,f,o){
 }
 function figXs(x,f){return f.off.map(o=>x+o*fw);}
 function gw(f){return(Math.max(...f.off)-Math.min(...f.off))*fw+fw*f.k*.72;}
-function drawFloor(x,y,f,o,i){figXs(x,f).forEach((xx,j)=>drawFig(xx,y,f,Object.assign({seed:(i||0)*10+j,l:j>0&&f.grp[j]===f.grp[j-1],r:j<f.count-1&&f.grp[j]===f.grp[j+1]},o||{})));}
+function drawFloor(x,y,f,o,i){const sh=(o&&o.shake)||0;
+  figXs(x,f).forEach((xx,j)=>{const sd=(i||0)*10+j;
+    // quan el castell perilla, les cames tremolen i el cos es tensa (petit vaivé i flexió)
+    const jx=sh?Math.sin(T*37+sd*1.9)*sh*fw*.045:0,jy=sh?Math.abs(Math.sin(T*29+sd*2.3))*sh*fw*.03:0;
+    drawFig(xx+jx,y+jy,f,Object.assign({seed:sd,l:j>0&&f.grp[j]===f.grp[j-1],r:j<f.count-1&&f.grp[j]===f.grp[j+1]},o||{}));});}
 // bust de la pinya: de cara al castell (d'esquena a nosaltres) o públic de cara
 function drawBustToon(x,y,s,col,v,o){
   const w=fw*s,r=w*.2,hy=y-r*1.02+(o.bow||0)*r,lw=Math.max(.7,w*.045),back=o.back;ctx.lineJoin='round';ctx.lineCap='round';
@@ -1263,11 +1267,19 @@ function draw(){
     const transfer=a.A&&a.phase==='descent'&&full===a.n-1&&frac>.001;
     if(frac>.001&&full<a.n&&!transfer){const f=a.F[full],xs=figXs(floorXAt(full),f);
       // tot el pis puja alhora (amb una diferència mínima entre ells)
-      xs.forEach((xx,j)=>{const lag=[0,.03,.015,.04,.01,.035,.02,.045,.025][j%9],e=clamp((frac-lag)/(1-.045),0,1),ee=1-Math.pow(1-e,2);
-        const yy=ground-h*.6+(f.y-(ground-h*.6))*ee;drawFig(xx+(1-ee)*fw*.25*(j%2?1:-1),yy,f,{seed:full*10+j,back:true,up:ee<.95});});}
+      xs.forEach((xx,j)=>{const lag=[0,.03,.015,.04,.01,.035,.02,.045,.025][j%9],e=clamp((frac-lag)/(1-.045),0,1);
+        // s'enfilen per l'esquena del de sota en tres estrebades: peu a la faixa, genoll a l'espatlla i redreçar-se
+        const NS=3,q=Math.min(e*NS,NS-1e-6),k=Math.floor(q),fr=q-k,sm=fr*fr*(3-2*fr),pe=e>=1?1:(k+sm)/NS;
+        const y0=ground-h*.6,yy=y0+(f.y-y0)*pe,side=(j%2?1:-1);
+        const squash=e>=1?1:1-.2*Math.sin(Math.PI*fr)*(1-.4*pe),lean=e>=1?0:side*(k%2?1:-1)*.07*Math.sin(Math.PI*fr);
+        const x=xx+(1-pe)*fw*.22*side;
+        ctx.save();ctx.translate(x,yy);ctx.rotate(lean);ctx.scale(1,squash);
+        drawFig(0,0,f,{seed:full*10+j,back:true,up:e<1&&fr<.85});ctx.restore();});}
     agullaVis().forEach(v=>{ctx.globalAlpha=v.al;drawFig(v.x,v.p.y+v.dy,v.p,{seed:600+(v.p.src||0),aleta:!!(v.p.top&&a.agAletaOn)});ctx.globalAlpha=1;});
+    const live=a.phase==='build'||a.phase==='aleta'||a.phase==='descent'||a.phase==='descentP',
+      dang=live?clamp((Math.abs(a.L)/(a.thrNow||a.P.thr)-.45)/.55,0,1):0;
     for(let i=1;i<Math.min(full,a.n);i++){let f=a.F[i];if(i===a.n-1&&a.dbl)f=Object.assign({},f,{off:[a.phase==='descent'?a.dbl[1]:a.enxOff]});
-      drawFloor(floorXAt(i),f.y,f,{aleta:i===a.n-1&&a.aletaOn},i);}
+      drawFloor(floorXAt(i),f.y,f,{aleta:i===a.n-1&&a.aletaOn,shake:dang*(1-.6*i/a.n)},i);}
     if(transfer){const f=a.F[a.n-1],q=a.A[a.A.length-1],e=1-frac,ee=e*e*(3-2*e),x0=floorXAt(a.n-1)+(a.dbl?a.dbl[1]:f.off[0])*fw,x1=floorXAt(q.src);
       const y=f.y+(q.y-f.y)*ee-Math.sin(Math.PI*ee)*h*.25;drawFig(x0+(x1-x0)*ee,y,q,{seed:(a.n-1)*10,up:ee>.15&&ee<.85});}
     ctx.drawImage(pinya.cv,0,pinya.top,W,H-pinya.top);drawRings();
